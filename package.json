@@ -1,0 +1,32 @@
+{
+  "name": "noflo-runtime-msgflo",
+  "description": "NoFlo runtime for Node.js over AMQP/MQTT etc",
+  "version": "0.0.1",
+  "author": {
+    "name": "Jon Nordby",
+    "email": "jononor@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/noflo/noflo-runtime-msgflo.git"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/noflo/noflo-runtime-msgflo/raw/master/LICENSE"
+    }
+  ],
+  "dependencies": {
+    "coffee-script": "^1.9.0",
+    "commander": "^2.1.0",
+    "msgflo": "~0.0.1",
+    "noflo": "^0.5.11"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1"
+  },
+  "main": "./runtime/network.js",
+  "scripts": {
+    "test": "grunt test"
+  }
+}
