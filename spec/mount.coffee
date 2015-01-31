@@ -34,25 +34,18 @@ describe 'Mount', ->
           done()
 
       describe 'starting mounted graph', ->
-        it 'should not fail', (done) ->
+        it 'should connect to broker', (done) ->
+          @timeout 4000
           options =
             broker: address
             graph: 'core/RepeatAsync'
-            id: '0-test-*'
+            id: '1someone'
           m = new mount.Mounter options
           m.start (err) ->
             chai.expect(err).to.be.a 'null'
-            done()
-
-      describe.skip 'starting mounted graph', ->
-        it 'should connect to broker', (done) ->
-          options =
-            broker: address
-            graph: 'core/RepeatAsync'
-            id: '1-test-*'
-          m = new mount.Mounter options
-          m.start (err) ->
-            chai.expect(err)
+            coordinator.once 'participant-added', (participant) ->
+              chai.expect(participant.id).to.equal options.id
+              done()
 
 
       describe.skip 'sending to input queue', ->

@@ -13,6 +13,7 @@ getLoader = ->
   loader
 
 wrapInport = (client, instance, port, queueName) ->
+  console.log 'wrapInport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.inPorts[port].attach socket
 
@@ -25,10 +26,11 @@ wrapInport = (client, instance, port, queueName) ->
     socket.endGroup()
     socket.disconnect()
 
-  client.subscribeToQueue queue, handler, (err) ->
+  client.subscribeToQueue queueName, onMessage, (err) ->
     throw err if err
 
 wrapOutport = (client, instance, port, queueName) ->
+  console.log 'wrapOutport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.outPorts[port].attach socket
   groups = []
@@ -46,7 +48,7 @@ wrapOutport = (client, instance, port, queueName) ->
   socket.on 'data', (data) ->
     # Send to outport
     msg = new Buffer JSON.stringify data
-    client.sendToQueue queue, msg, (err) ->
+    client.sendToQueue queueName, msg, (err) ->
       console.log err
 
 values = (dict) ->
@@ -97,18 +99,24 @@ class Mounter
 
         loadAndStartGraph @options.graph, (err, instance) =>
           return callback err if err
+          console.log 'loaded', instance
 
           definition = @getDefinition instance
           # TODO: support queues being set up over FBP protocol
           setupQueues @client, definition, (err) =>
-            return callback err
+            console.log 'queues set up', err
+            return callback err if err
 
-            for port in definition.outport
+#            console.log 'setting up', definition
+            for port in definition.inports
+              console.log port
               wrapInport @client, instance, port.id, port.queue
-            for port in definition.outport
+            for port in definition.outports
+              console.log port
               wrapOutport @client, instance, port.id, port.queue
 
-            sendParticipant graph, (err) ->
+            console.log 'sending participant'
+            @sendParticipant definition, (err) ->
               return callback err
 
   getDefinition: (graph) ->
@@ -123,14 +131,14 @@ class Mounter
 
     console.log graph
 
-    for name in Object.keys graph.inPorts
+    for name in Object.keys graph.inPorts.ports
       port =
         id: name
         queue: @options.id+'-inputs-'+name
         type: 'all'
       definition.inports.push port
 
-    for name in Object.keys graph.outPorts
+    for name in Object.keys graph.outPorts.ports
       port =
         id: name
         queue: @options.id+'-outputs-'+name
@@ -144,8 +152,9 @@ class Mounter
       protocol: 'discovery'
       command: 'participant'
       payload: definition
-    @messaging.sendToQueue 'fbp', msg, (err) ->
-      return callback err if err
+    @client.sendToQueue 'fbp', msg, (err) ->
+      console.log 'SENT participant'
+      return callback err
 
 exports.Mounter = Mounter
 
