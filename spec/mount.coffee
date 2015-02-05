@@ -47,9 +47,20 @@ describe 'Mount', ->
               chai.expect(participant.id).to.equal options.id
               done()
 
-
-      describe.skip 'sending to input queue', ->
+      describe 'sending to input queue', ->
         it 'should come out on output queue', (done) ->
-          done()
+          options =
+            broker: address
+            graph: 'core/RepeatAsync'
+            id: '1some2'
+          m = new mount.Mounter options
+          m.start (err) ->
+            chai.expect(err).to.be.a 'null'
+            coordinator.once 'participant-added', (participant) ->
+              chai.expect(participant.id).to.equal options.id
+              coordinator.subscribeTo options.id, 'out', (msg) ->
+                chai.expect(msg.data).to.eql { foo: 'bar' }
+                done()
+              coordinator.sendTo options.id, 'in', { foo: 'bar' }
     
 

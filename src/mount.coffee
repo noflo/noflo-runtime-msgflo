@@ -18,11 +18,11 @@ wrapInport = (client, instance, port, queueName) ->
   instance.inPorts[port].attach socket
 
   onMessage = (msg) ->
-    return unless msg
-    message = JSON.parse msg.content.toString()
+    console.log 'ONmessage', typeof msg.data, msg.data
+    return unless msg.data
 
-    socket.beginGroup msg.fields.deliveryTag
-    socket.send message
+    socket.beginGroup msg.amqp.fields.deliveryTag
+    socket.send msg.data
     socket.endGroup()
     socket.disconnect()
 
@@ -35,9 +35,7 @@ wrapOutport = (client, instance, port, queueName) ->
   instance.outPorts[port].attach socket
   groups = []
 
-  # TODO: send ACK/NACK
-  # NACK or kill when output is inproperly grouped
-  # 
+  # TODO: NACK or kill when output is inproperly grouped
   socket.on 'begingroup', (group) ->
     groups.push group
   socket.on 'endgroup', (group) ->
@@ -46,9 +44,19 @@ wrapOutport = (client, instance, port, queueName) ->
     groups = []
 
   socket.on 'data', (data) ->
+    # ack/nack
+    msg =
+      amqp:
+        fields:
+          deliveryTag: groups[0]
+      data: null
+    if port == 'error'
+      client.nackMessage msg
+    else
+      client.ackMessage msg
+
     # Send to outport
-    msg = new Buffer JSON.stringify data
-    client.sendToQueue queueName, msg, (err) ->
+    client.sendToQueue queueName, data, (err) ->
       console.log err
 
 values = (dict) ->
@@ -99,7 +107,7 @@ class Mounter
 
         loadAndStartGraph @options.graph, (err, instance) =>
           return callback err if err
-          console.log 'loaded', instance
+          # console.log 'loaded', instance
 
           definition = @getDefinition instance
           # TODO: support queues being set up over FBP protocol
@@ -129,7 +137,7 @@ class Mounter
       inports: []
       outports: []
 
-    console.log graph
+    # console.log graph
 
     for name in Object.keys graph.inPorts.ports
       port =
