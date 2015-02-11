@@ -8,7 +8,7 @@ The exported ports of the NoFlo network then becomes accessible through message 
 and msgflo can coordinate how multiple such networks send data between eachother.
 
 Will eventually allow a single entry-point for
-[FBP runtime protocol](http://noflojs.org/documentation/protocol) clients (like Flowhub)
+[FBP runtime protocol](http://noflojs.org/documentation/protocol) clients (like [Flowhub](http://flowhub.io))
 to access NoFlo FBP networks that span multiple nodes.
 
 
