@@ -59,21 +59,15 @@ wrapOutport = (client, instance, port, queueName) ->
     client.sendToQueue queueName, data, (err) ->
       console.log err
 
-values = (dict) ->
-  return Object.keys(dict).map (key) -> return dict[key]
-
 setupQueues = (client, def, callback) ->
+  setupIn = (port, cb) ->
+    client.createQueue 'inqueue', port.queue, cb
+  setupOut = (port, cb) ->
+    client.createQueue 'outqueue', port.queue, cb
 
-  # FIXME: Allow only one message per worker before ack/nack
-  # channel.prefetch 1
-  setupQueue = (port, callback) ->
-    client.createQueue port.queue, callback
-
-  ports = def.inports.concat(def.outports)
-  async.map ports, setupQueue, (err) ->
+  async.map def.inports, setupIn, (err) ->
     return callback err if err
-    return callback null
-
+    async.map def.outports, setupOut, callback
 
 loadAndStartGraph = (graphName, callback) ->
   loader = getLoader()
@@ -89,49 +83,44 @@ loadAndStartGraph = (graphName, callback) ->
 
 class Mounter
   constructor: (@options) ->
-    @client = msgflo.transport.getClient @options.broker
+    clientOptions =
+      prefetch: 1
+    @client = msgflo.transport.getClient @options.broker, clientOptions
     @graph = null
     @network = null
     @options.id = @options.id.replace '*', randomstring.generate 6
 
   start: (callback) ->
-    queueName = (type, port) ->
-      return "#{options.id}-#{type}-#{port}"
-
     @client.connect (err) =>
       return callback err if err
-
-      # Send discovery package to broker on 'fbp' queue
-      @client.createQueue 'fbp', (err) =>
+      loadAndStartGraph @options.graph, (err, instance) =>
         return callback err if err
+        # console.log 'loaded', instance
 
-        loadAndStartGraph @options.graph, (err, instance) =>
+        definition = @getDefinition instance
+        # TODO: support queues being set up over FBP protocol
+        setupQueues @client, definition, (err) =>
+          console.log 'queues set up', err
           return callback err if err
-          # console.log 'loaded', instance
-
-          definition = @getDefinition instance
-          # TODO: support queues being set up over FBP protocol
-          setupQueues @client, definition, (err) =>
-            console.log 'queues set up', err
-            return callback err if err
 
 #            console.log 'setting up', definition
-            for port in definition.inports
-              console.log port
-              wrapInport @client, instance, port.id, port.queue
-            for port in definition.outports
-              console.log port
-              wrapOutport @client, instance, port.id, port.queue
+          for port in definition.inports
+            console.log port
+            wrapInport @client, instance, port.id, port.queue
+          for port in definition.outports
+            console.log port
+            wrapOutport @client, instance, port.id, port.queue
 
-            console.log 'sending participant'
-            @sendParticipant definition, (err) ->
-              return callback err
+          # Send discovery package to broker on 'fbp' queue
+          console.log 'sending participant'
+          @sendParticipant definition, (err) ->
+            return callback err
 
   getDefinition: (graph) ->
 
     definition =
       id: @options.id
-      'class': @options.graph
+      component: @options.graph
       icon: 'file-word-o' # FIXME: implement
       label: 'No description' # FIXME: implement
       inports: []
@@ -156,13 +145,7 @@ class Mounter
     return definition
 
   sendParticipant: (definition, callback) ->
-    msg =
-      protocol: 'discovery'
-      command: 'participant'
-      payload: definition
-    @client.sendToQueue 'fbp', msg, (err) ->
-      console.log 'SENT participant'
-      return callback err
+    @client.registerParticipant definition, callback
 
 exports.Mounter = Mounter
 
