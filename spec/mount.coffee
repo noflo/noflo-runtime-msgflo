@@ -15,7 +15,6 @@ describe 'Mount', ->
 
   Object.keys(transports).forEach (type) =>
     address = transports[type]
-    console.log address
     coordinator = null
     first = null
 

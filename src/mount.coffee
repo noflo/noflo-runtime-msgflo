@@ -1,10 +1,11 @@
-
 path = require 'path'
 
 noflo = require 'noflo'
 async = require 'async'
 msgflo = require 'msgflo'
 randomstring = require 'randomstring'
+
+debug = require('debug')('noflo-runtime-msgflo:mount')
 
 loader = null
 getLoader = ->
@@ -13,12 +14,12 @@ getLoader = ->
   loader
 
 wrapInport = (client, instance, port, queueName) ->
-  console.log 'wrapInport', port, queueName
+  debug 'wrapInport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.inPorts[port].attach socket
 
   onMessage = (msg) ->
-    console.log 'ONmessage', typeof msg.data, msg.data
+    debug 'onMessage', typeof msg.data, msg.data
     return unless msg.data
 
     socket.beginGroup msg.amqp.fields.deliveryTag
@@ -30,7 +31,7 @@ wrapInport = (client, instance, port, queueName) ->
     throw err if err
 
 wrapOutport = (client, instance, port, queueName) ->
-  console.log 'wrapOutport', port, queueName
+  debug 'wrapOutport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.outPorts[port].attach socket
   groups = []
@@ -57,7 +58,7 @@ wrapOutport = (client, instance, port, queueName) ->
 
     # Send to outport
     client.sendToQueue queueName, data, (err) ->
-      console.log err
+      debug 'sent output data', queueName, err, data
 
 setupQueues = (client, def, callback) ->
   setupIn = (port, cb) ->
@@ -95,24 +96,20 @@ class Mounter
       return callback err if err
       loadAndStartGraph @options.graph, (err, instance) =>
         return callback err if err
-        # console.log 'loaded', instance
+        debug 'started graph', @options.graph
 
         definition = @getDefinition instance
         # TODO: support queues being set up over FBP protocol
         setupQueues @client, definition, (err) =>
-          console.log 'queues set up', err
+          debug 'queues set up', err
           return callback err if err
 
-#            console.log 'setting up', definition
           for port in definition.inports
-            console.log port
             wrapInport @client, instance, port.id, port.queue
           for port in definition.outports
-            console.log port
             wrapOutport @client, instance, port.id, port.queue
 
           # Send discovery package to broker on 'fbp' queue
-          console.log 'sending participant'
           @sendParticipant definition, (err) ->
             return callback err
 
@@ -125,8 +122,6 @@ class Mounter
       label: 'No description' # FIXME: implement
       inports: []
       outports: []
-
-    # console.log graph
 
     for name in Object.keys graph.inPorts.ports
       port =
@@ -145,6 +140,7 @@ class Mounter
     return definition
 
   sendParticipant: (definition, callback) ->
+    debug 'sendParticipant', definition.id
     @client.registerParticipant definition, callback
 
 exports.Mounter = Mounter
