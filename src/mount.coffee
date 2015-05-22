@@ -57,7 +57,7 @@ wrapOutport = (client, instance, port, queueName) ->
       client.ackMessage msg
 
     # Send to outport
-    client.sendToQueue queueName, data, (err) ->
+    client.sendTo 'outqueue', queueName, data, (err) ->
       debug 'sent output data', queueName, err, data
 
 setupQueues = (client, def, callback) ->
