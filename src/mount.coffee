@@ -84,6 +84,8 @@ loadAndStartGraph = (graphName, callback) ->
 
 class Mounter
   constructor: (@options) ->
+    @options.inports = {} if not @options.inports
+    @options.outports = {} if not @options.outports
     clientOptions =
       prefetch: 1
     @client = msgflo.transport.getClient @options.broker, clientOptions
@@ -133,6 +135,16 @@ class Mounter
         id: name
         type: 'all'
       definition.outports.push port
+
+    # merge in port overrides from options
+    for id, port in @options.inports
+      def = definitions.inport.filter((p) -> p.id == id)[0]
+      for k, v in port
+        def[k] = v if v
+    for id, port in @options.outports
+      def = definitions.outport.filter((p) -> p.id == id)[0]
+      for k, v in port
+        def[k] = v if v
 
     def = msgflo.participant.instantiateDefinition definition, @options.name
     return def
