@@ -27,10 +27,11 @@
   "devDependencies": {
     "chai": "^1.10.0",
     "grunt": "~0.4.1",
+    "mocha": "^2.2.5",
     "noflo-core": "^0.1.11"
   },
   "main": "./runtime/network.js",
   "scripts": {
-    "test": "grunt test"
+    "test": "mocha --reporter spec --compilers coffee:coffee-script/register spec/*.coffee"
   }
 }
