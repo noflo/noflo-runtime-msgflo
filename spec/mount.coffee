@@ -38,12 +38,12 @@ describe 'Mount', ->
           options =
             broker: address
             graph: 'core/RepeatAsync'
-            id: '1someone'
+            name: '1someone'
           m = new mount.Mounter options
           m.start (err) ->
             chai.expect(err).to.be.a 'null'
             coordinator.once 'participant-added', (participant) ->
-              chai.expect(participant.id).to.equal options.id
+              chai.expect(participant.id).to.contain options.name
               done()
 
       describe 'sending to input queue', ->
@@ -51,15 +51,17 @@ describe 'Mount', ->
           options =
             broker: address
             graph: 'core/RepeatAsync'
-            id: '1some2'
+            name: '1some2'
           m = new mount.Mounter options
           m.start (err) ->
             chai.expect(err).to.be.a 'null'
             coordinator.once 'participant-added', (participant) ->
-              chai.expect(participant.id).to.equal options.id
-              coordinator.subscribeTo options.id, 'out', (msg) ->
+              console.log 'added', participant
+              chai.expect(participant.id).to.contain options.name
+              part = participant.id
+              coordinator.subscribeTo part, 'out', (msg) ->
                 chai.expect(msg.data).to.eql { foo: 'bar' }
                 done()
-              coordinator.sendTo options.id, 'in', { foo: 'bar' }
+              coordinator.sendTo part, 'in', { foo: 'bar' }
     
 

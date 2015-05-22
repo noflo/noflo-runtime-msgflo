@@ -89,7 +89,6 @@ class Mounter
     @client = msgflo.transport.getClient @options.broker, clientOptions
     @graph = null
     @network = null
-    @options.id = @options.id.replace '*', randomstring.generate 6
 
   start: (callback) ->
     @client.connect (err) =>
@@ -116,28 +115,27 @@ class Mounter
   getDefinition: (graph) ->
 
     definition =
-      id: @options.id
       component: @options.graph
       icon: 'file-word-o' # FIXME: implement
       label: 'No description' # FIXME: implement
       inports: []
       outports: []
 
+    # TODO: read out type annotations
     for name in Object.keys graph.inPorts.ports
       port =
         id: name
-        queue: @options.id+'-inputs-'+name
         type: 'all'
       definition.inports.push port
 
     for name in Object.keys graph.outPorts.ports
       port =
         id: name
-        queue: @options.id+'-outputs-'+name
         type: 'all'
       definition.outports.push port
 
-    return definition
+    def = msgflo.participant.instantiateDefinition definition, @options.name
+    return def
 
   sendParticipant: (definition, callback) ->
     debug 'sendParticipant', definition.id
