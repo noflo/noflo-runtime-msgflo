@@ -31,6 +31,9 @@
     "noflo-core": "^0.1.13",
     "randomstring": "^1.0.3"
   },
+  "bin": {
+    "noflo-runtime-msgflo": "./bin/noflo-runtime-msgflo"
+  },
   "main": "./runtime/network.js",
   "scripts": {
     "test": "mocha --reporter spec --compilers coffee:coffee-script/register spec/*.coffee"
