@@ -1,7 +1,7 @@
 {
   "name": "noflo-runtime-msgflo",
   "description": "NoFlo runtime for Node.js over AMQP/MQTT etc",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "author": {
     "name": "Jon Nordby",
     "email": "jononor@gmail.com"
