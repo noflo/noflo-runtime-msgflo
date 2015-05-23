@@ -82,6 +82,41 @@ loadAndStartGraph = (graphName, callback) ->
     else
       instance.once 'ready', onReady
 
+getDefinition = (instance, options) ->
+
+    definition =
+      component: options.graph
+      icon: 'file-word-o' # FIXME: implement
+      label: 'No description' # FIXME: implement
+      inports: []
+      outports: []
+
+    # TODO: read out type annotations
+    for name in Object.keys instance.inPorts.ports
+      port =
+        id: name
+        type: 'all'
+      definition.inports.push port
+
+    for name in Object.keys instance.outPorts.ports
+      port =
+        id: name
+        type: 'all'
+      definition.outports.push port
+
+    # merge in port overrides from options
+    for id, port in options.inports
+      def = definitions.inport.filter((p) -> p.id == id)[0]
+      for k, v in port
+        def[k] = v if v
+    for id, port in options.outports
+      def = definitions.outport.filter((p) -> p.id == id)[0]
+      for k, v in port
+        def[k] = v if v
+
+    def = msgflo.participant.instantiateDefinition definition, options.name
+    return def
+
 class Mounter
   constructor: (@options) ->
     @options.inports = {} if not @options.inports
@@ -124,41 +159,9 @@ class Mounter
         @client = null
         return callback err
 
-  # TODO: move logic out, don`t require graph param in method
-  getDefinition: (graph) ->
-
-    definition =
-      component: @options.graph
-      icon: 'file-word-o' # FIXME: implement
-      label: 'No description' # FIXME: implement
-      inports: []
-      outports: []
-
-    # TODO: read out type annotations
-    for name in Object.keys graph.inPorts.ports
-      port =
-        id: name
-        type: 'all'
-      definition.inports.push port
-
-    for name in Object.keys graph.outPorts.ports
-      port =
-        id: name
-        type: 'all'
-      definition.outports.push port
-
-    # merge in port overrides from options
-    for id, port in @options.inports
-      def = definitions.inport.filter((p) -> p.id == id)[0]
-      for k, v in port
-        def[k] = v if v
-    for id, port in @options.outports
-      def = definitions.outport.filter((p) -> p.id == id)[0]
-      for k, v in port
-        def[k] = v if v
-
-    def = msgflo.participant.instantiateDefinition definition, @options.name
-    return def
+  getDefinition: () ->
+    return null if not @instance
+    return getDefinition @instance, @options
 
   sendParticipant: (definition, callback) ->
     debug 'sendParticipant', definition.id
