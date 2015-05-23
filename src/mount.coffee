@@ -44,9 +44,8 @@ wrapOutport = (client, instance, port, queueName) ->
         fields:
           deliveryTag: groups[0]
       data: null
-    # FIXME: nack with false, false to make deadlettering work
     if port == 'error'
-      client.nackMessage msg
+      client.nackMessage msg, false, false
     else
       client.ackMessage msg
 
