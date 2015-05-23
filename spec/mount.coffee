@@ -57,6 +57,45 @@ transportTest = (address) ->
             done()
           coordinator.sendTo part, 'in', { foo: 'bar' }
 
+
+  describe 'graph with custom queues names', ->
+    m = null
+    options = null
+    beforeEach (done) ->
+      @timeout 4000
+      id = randomstring.generate 4
+      options =
+        broker: address
+        graph: 'core/Repeat'
+        name: 'customqueue'+id
+        inports:
+          'in':
+            queue: '_myinport33'+id
+        outports:
+          out:
+            queue: '_myoutport33'+id
+      m = new mount.Mounter options
+      m.start done
+    afterEach (done) ->
+      m.stop done
+
+    describe 'sending to specified input queue', ->
+      it 'should output on specified queue', (done) ->
+        coordinator.once 'participant-added', (participant) ->
+          chai.expect(participant.id).to.contain options.name
+
+          input = { 'ff': 'uuuu' }
+          onResult = (msg) ->
+            chai.expect(msg.data).to.eql input
+            done()
+          client = msgflo.transport.getClient address
+          client.connect (err) ->
+            chai.expect(err).to.not.exist
+            client.subscribeToQueue options.outports['out'].queue, onResult, (err) ->
+              chai.expect(err).to.not.exist
+              client.sendTo 'inqueue', options.inports['in'].queue, input, (err) ->
+                chai.expect(err).to.not.exist
+
 describe 'Mount', ->
   Object.keys(transports).forEach (type) =>
     address = transports[type]
