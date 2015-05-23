@@ -12,10 +12,12 @@ wrapInport = (client, instance, port, queueName) ->
   instance.inPorts[port].attach socket
 
   onMessage = (msg) ->
-    debug 'onMessage', typeof msg.data, msg.data
+    groupId = msg.amqp.fields.deliveryTag
+    debug 'onInMessage', typeof msg.data, msg.data, groupId
     return unless msg.data
 
-    socket.beginGroup msg.amqp.fields.deliveryTag
+    socket.connect()
+    socket.beginGroup groupId
     socket.send msg.data
     socket.endGroup()
     socket.disconnect()
@@ -32,13 +34,17 @@ wrapOutport = (client, instance, port, queueName) ->
 
   # TODO: NACK or kill when output is inproperly grouped
   socket.on 'begingroup', (group) ->
+    debug 'beginGroup', port, group
     groups.push group
   socket.on 'endgroup', (group) ->
+    debug 'endGroup', port, group
     groups.pop()
   socket.on 'disconnect', ->
+    debug 'onDisconnect', port, groups
     groups = []
 
   socket.on 'data', (data) ->
+    debug 'onOutMessage', port, typeof data, groups
     # ack/nack
     msg =
       amqp:
