@@ -6,12 +6,6 @@ msgflo = require 'msgflo'
 
 debug = require('debug')('noflo-runtime-msgflo:mount')
 
-loader = null
-getLoader = ->
-  baseDir = path.join __dirname, '..'
-  loader = new noflo.ComponentLoader baseDir unless loader
-  loader
-
 wrapInport = (client, instance, port, queueName) ->
   debug 'wrapInport', port, queueName
   socket = noflo.internalSocket.createSocket()
@@ -70,8 +64,7 @@ setupQueues = (client, def, callback) ->
     return callback err if err
     async.map def.outports, setupOut, callback
 
-loadAndStartGraph = (graphName, callback) ->
-  loader = getLoader()
+loadAndStartGraph = (loader, graphName, callback) ->
   loader.load graphName, (err, instance) ->
     return callback err if err
     onReady = () ->
@@ -119,17 +112,20 @@ getDefinition = (instance, options) ->
 
 class Mounter
   constructor: (@options) ->
+    # default options
     @options.inports = {} if not @options.inports
     @options.outports = {} if not @options.outports
-    clientOptions =
-      prefetch: 1
-    @client = msgflo.transport.getClient @options.broker, clientOptions
+    @options.basedir = process.cwd() if not @options.basedir
+    @options.prefetch = 1 if not @options.prefetch
+
+    @loader = new noflo.ComponentLoader @options.basedir
+    @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
     @instance = null # noflo.Component instance
 
   start: (callback) ->
     @client.connect (err) =>
       return callback err if err
-      loadAndStartGraph @options.graph, (err, instance) =>
+      loadAndStartGraph @loader, @options.graph, (err, instance) =>
         return callback err if err
         debug 'started graph', @options.graph
         @instance = instance
