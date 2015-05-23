@@ -20,6 +20,7 @@ wrapInport = (client, instance, port, queueName) ->
     socket.endGroup()
     socket.disconnect()
 
+  return if not queueName
   client.subscribeToQueue queueName, onMessage, (err) ->
     throw err if err
 
@@ -50,6 +51,7 @@ wrapOutport = (client, instance, port, queueName) ->
       client.ackMessage msg
 
     # Send to outport
+    return if not queueName # hidden
     client.sendTo 'outqueue', queueName, data, (err) ->
       debug 'sent output data', queueName, err, data
 
@@ -139,9 +141,9 @@ class Mounter
           return callback err if err
 
           for port in definition.inports
-            wrapInport @client, instance, port.id, port.queue if not port.hidden
+            wrapInport @client, instance, port.id, port.queue
           for port in definition.outports
-            wrapOutport @client, instance, port.id, port.queue if not port.hidden
+            wrapOutport @client, instance, port.id, port.queue
 
           # Send discovery package to broker on 'fbp' queue
           @sendParticipant definition, (err) ->
