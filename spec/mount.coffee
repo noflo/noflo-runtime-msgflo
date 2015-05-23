@@ -63,3 +63,10 @@ describe 'Mount', ->
 
     describe ", transport=#{type}: ", () ->
       transportTest address
+
+  # FIXME: implement test for these cases
+  describe 'specifying queue name in options', ->
+    it 'should be used instead of default'
+  describe 'specifying port as hidden', ->
+    it 'should not create queue'
+

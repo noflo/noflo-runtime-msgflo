@@ -60,9 +60,12 @@ setupQueues = (client, def, callback) ->
   setupOut = (port, cb) ->
     client.createQueue 'outqueue', port.queue, cb
 
-  async.map def.inports, setupIn, (err) ->
+  inports = def.inports.filter (p) -> not p.hidden
+  outports = def.outports.filter (p) -> not p.hidden
+
+  async.map inports, setupIn, (err) ->
     return callback err if err
-    async.map def.outports, setupOut, callback
+    async.map outports, setupOut, callback
 
 loadAndStartGraph = (loader, graphName, callback) ->
   loader.load graphName, (err, instance) ->
@@ -98,13 +101,13 @@ getDefinition = (instance, options) ->
       definition.outports.push port
 
     # merge in port overrides from options
-    for id, port in options.inports
-      def = definitions.inport.filter((p) -> p.id == id)[0]
-      for k, v in port
+    for id, port of options.inports
+      def = definition.inports.filter((p) -> p.id == id)[0]
+      for k, v of port
         def[k] = v if v
-    for id, port in options.outports
-      def = definitions.outport.filter((p) -> p.id == id)[0]
-      for k, v in port
+    for id, port of options.outports
+      def = definition.outports.filter((p) -> p.id == id)[0]
+      for k, v of port
         def[k] = v if v
 
     def = msgflo.participant.instantiateDefinition definition, options.name
@@ -137,9 +140,9 @@ class Mounter
           return callback err if err
 
           for port in definition.inports
-            wrapInport @client, instance, port.id, port.queue
+            wrapInport @client, instance, port.id, port.queue if not port.hidden
           for port in definition.outports
-            wrapOutport @client, instance, port.id, port.queue
+            wrapOutport @client, instance, port.id, port.queue if not port.hidden
 
           # Send discovery package to broker on 'fbp' queue
           @sendParticipant definition, (err) ->
