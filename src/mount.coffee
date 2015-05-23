@@ -3,7 +3,6 @@ path = require 'path'
 noflo = require 'noflo'
 async = require 'async'
 msgflo = require 'msgflo'
-randomstring = require 'randomstring'
 
 debug = require('debug')('noflo-runtime-msgflo:mount')
 
@@ -51,6 +50,7 @@ wrapOutport = (client, instance, port, queueName) ->
         fields:
           deliveryTag: groups[0]
       data: null
+    # FIXME: nack with false, false to make deadlettering work
     if port == 'error'
       client.nackMessage msg
     else
@@ -89,8 +89,7 @@ class Mounter
     clientOptions =
       prefetch: 1
     @client = msgflo.transport.getClient @options.broker, clientOptions
-    @graph = null
-    @network = null
+    @instance = null # noflo.Component instance
 
   start: (callback) ->
     @client.connect (err) =>
@@ -98,6 +97,7 @@ class Mounter
       loadAndStartGraph @options.graph, (err, instance) =>
         return callback err if err
         debug 'started graph', @options.graph
+        @instance = instance
 
         definition = @getDefinition instance
         # TODO: support queues being set up over FBP protocol
@@ -114,6 +114,17 @@ class Mounter
           @sendParticipant definition, (err) ->
             return callback err
 
+  stop: (callback) ->
+    return callback null if not @graph
+    @graph.shutdown (err) =>
+      @graph = null
+      return callback err if err
+      return callback null if not @client
+      @client.disconnect (err) =>
+        @client = null
+        return callback err
+
+  # TODO: move logic out, don`t require graph param in method
   getDefinition: (graph) ->
 
     definition =
