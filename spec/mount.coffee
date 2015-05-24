@@ -148,3 +148,42 @@ describe 'Mount', ->
     describe ", transport=#{type}: ", () ->
       transportTest address
 
+    describe "options", ->
+      describe 'default', ->
+         defaults = mount.normalizeOptions {}
+         it 'exists for prefetch', ->
+            chai.expect(defaults.prefetch).to.be.a 'number'
+         it 'exists for basedir', ->
+            chai.expect(defaults.basedir).to.be.a 'string'
+
+      describe 'key=value', ->
+        it 'should set key to be "value"', ->
+          input =
+            option: [ 'key1=val1' ]
+          options = mount.normalizeOptions input
+          chai.expect(options.key1).to.equal 'val1'
+      describe 'foo.bar.baz=value', ->
+        it 'should set "value" on nested object', ->
+          input =
+            option: [ 'foo.bar.baz=value' ]
+          options = mount.normalizeOptions input
+          chai.expect(options.foo.bar.baz).to.equal 'value'
+
+      describe 'baz=value-with=in-it', ->
+        it 'should set baz to be "value-with=in-it"', ->
+          input =
+            option: [ 'baz=value-with=in-it' ]
+          options = mount.normalizeOptions input
+          chai.expect(options.baz).to.equal 'value-with=in-it'
+
+      describe 'multiple --option', ->
+        it 'should set each of the key,value pairs', ->
+          input =
+            option: [ 'sub.key11=val111', 'sub.key22=val222' ]
+          options = mount.normalizeOptions input
+          chai.expect(options.sub.key11).to.equal 'val111'
+          chai.expect(options.sub.key22).to.equal 'val222'
+
+      describe 'invalid --option', () ->
+        it 'should be handled somehow...'
+

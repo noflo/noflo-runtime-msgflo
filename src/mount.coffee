@@ -1,3 +1,5 @@
+common = require './common'
+
 path = require 'path'
 
 noflo = require 'noflo'
@@ -120,14 +122,42 @@ getDefinition = (instance, options) ->
     def = msgflo.participant.instantiateDefinition definition, options.name
     return def
 
-class Mounter
-  constructor: (@options) ->
-    # default options
-    @options.inports = {} if not @options.inports
-    @options.outports = {} if not @options.outports
-    @options.basedir = process.cwd() if not @options.basedir
-    @options.prefetch = 1 if not @options.prefetch
+applyOption = (obj, option) ->
+  tokens = option.split '='
+  if tokens.length > 1
+    value = tokens.slice(1).join('=')
+    key = tokens[0]
+    keys = key.split '.'
 
+    target = obj
+    for k,i in keys
+      last = (i == keys.length-1)
+      if last
+        target[k] = value
+      else
+        target[k] = {} if not target[k]
+        target = target[k]
+
+exports.normalizeOptions = normalizeOptions = (opt) ->
+  options = common.clone opt
+
+  # defaults
+  options.inports = {} if not options.inports
+  options.outports = {} if not options.outports
+  options.basedir = process.cwd() if not options.basedir
+  options.prefetch = 1 if not options.prefetch
+
+  if options.option
+    for option in options.option
+      applyOption options, option
+
+    delete options.option
+
+  return options
+
+class Mounter
+  constructor: (options) ->
+    @options = normalizeOptions options
     @loader = new noflo.ComponentLoader @options.basedir
     @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
     @instance = null # noflo.Component instance
