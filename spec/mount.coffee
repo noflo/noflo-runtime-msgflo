@@ -150,11 +150,14 @@ describe 'Mount', ->
 
     describe "options", ->
       describe 'default', ->
+         process.env['CLOUDAMQP_URL'] = 'amqp://localhost'
          defaults = mount.normalizeOptions {}
          it 'exists for prefetch', ->
             chai.expect(defaults.prefetch).to.be.a 'number'
          it 'exists for basedir', ->
             chai.expect(defaults.basedir).to.be.a 'string'
+         it 'exists for broker url', ->
+            chai.expect(defaults.broker).to.be.a 'string'
 
       describe 'key=value', ->
         it 'should set key to be "value"', ->

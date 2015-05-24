@@ -147,6 +147,9 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
   options.basedir = process.cwd() if not options.basedir
   options.prefetch = 1 if not options.prefetch
 
+  options.broker = process.env['MSGFLO_BROKER'] if not options.broker
+  options.broker = process.env['CLOUDAMQP_URL'] if not options.broker
+
   if options.option
     for option in options.option
       applyOption options, option
