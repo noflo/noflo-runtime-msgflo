@@ -150,8 +150,8 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
   options.broker = process.env['MSGFLO_BROKER'] if not options.broker
   options.broker = process.env['CLOUDAMQP_URL'] if not options.broker
 
-  if options.option
-    for option in options.option
+  if options.attr and options.attr.length
+    for option in options.attr
       applyOption options, option
 
     delete options.option

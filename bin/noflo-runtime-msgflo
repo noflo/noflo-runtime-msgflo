@@ -2,6 +2,6 @@
 // vim: set filetype=javascript:
 
 require('coffee-script/register');
-require('../src/').main();
+require('../src').main.main();
 
 

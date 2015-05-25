@@ -159,34 +159,34 @@ describe 'Mount', ->
          it 'exists for broker url', ->
             chai.expect(defaults.broker).to.be.a 'string'
 
-      describe 'key=value', ->
+      describe '--attr key=value', ->
         it 'should set key to be "value"', ->
           input =
-            option: [ 'key1=val1' ]
+            attr: [ 'key1=val1' ]
           options = mount.normalizeOptions input
           chai.expect(options.key1).to.equal 'val1'
-      describe 'foo.bar.baz=value', ->
+      describe '--attr foo.bar.baz=value', ->
         it 'should set "value" on nested object', ->
           input =
-            option: [ 'foo.bar.baz=value' ]
+            attr: [ 'foo.bar.baz=value' ]
           options = mount.normalizeOptions input
           chai.expect(options.foo.bar.baz).to.equal 'value'
 
-      describe 'baz=value-with=in-it', ->
+      describe '--attr baz=value-with=in-it', ->
         it 'should set baz to be "value-with=in-it"', ->
           input =
-            option: [ 'baz=value-with=in-it' ]
+            attr: [ 'baz=value-with=in-it' ]
           options = mount.normalizeOptions input
           chai.expect(options.baz).to.equal 'value-with=in-it'
 
-      describe 'multiple --option', ->
+      describe 'multiple --attr', ->
         it 'should set each of the key,value pairs', ->
           input =
-            option: [ 'sub.key11=val111', 'sub.key22=val222' ]
+            attr: [ 'sub.key11=val111', 'sub.key22=val222' ]
           options = mount.normalizeOptions input
           chai.expect(options.sub.key11).to.equal 'val111'
           chai.expect(options.sub.key22).to.equal 'val222'
 
-      describe 'invalid --option', () ->
+      describe 'invalid --attr', () ->
         it 'should be handled somehow...'
 
