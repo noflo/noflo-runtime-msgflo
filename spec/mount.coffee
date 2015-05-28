@@ -81,20 +81,17 @@ transportTest = (address) ->
 
     describe 'sending to specified input queue', ->
       it 'should output on specified queue', (done) ->
-        coordinator.once 'participant-added', (participant) ->
-          chai.expect(participant.id).to.contain options.name
-
-          input = { 'ff': 'uuuu' }
-          onResult = (msg) ->
-            chai.expect(msg.data).to.eql input
-            done()
-          client = msgflo.transport.getClient address
-          client.connect (err) ->
+        input = { 'ff': 'uuuu' }
+        onResult = (msg) ->
+          chai.expect(msg.data).to.eql input
+          done()
+        client = msgflo.transport.getClient address
+        client.connect (err) ->
+          chai.expect(err).to.not.exist
+          client.subscribeToQueue options.outports['out'].queue, onResult, (err) ->
             chai.expect(err).to.not.exist
-            client.subscribeToQueue options.outports['out'].queue, onResult, (err) ->
+            client.sendTo 'inqueue', options.inports['in'].queue, input, (err) ->
               chai.expect(err).to.not.exist
-              client.sendTo 'inqueue', options.inports['in'].queue, input, (err) ->
-                chai.expect(err).to.not.exist
 
   describe 'graph with deadlettering', ->
     m = null
@@ -121,24 +118,21 @@ transportTest = (address) ->
 
     describe 'input message causing error', ->
       it 'should be sent to deadletter queue', (done) ->
-        coordinator.once 'participant-added', (participant) ->
-          chai.expect(participant.id).to.contain options.name
+        inputCausingError = '__non_exitsting_envvar___'
+        onDeadletter = (msg) ->
+          chai.expect(msg.data).to.eql inputCausingError
+          done()
+        deadletter = 'dead-'+options.inports.key.queue
+        client = msgflo.transport.getClient address
+        client.connect (err) ->
+          chai.expect(err).to.not.exist
 
-          inputCausingError = '__non_exitsting_envvar___'
-          onDeadletter = (msg) ->
-            chai.expect(msg.data).to.eql inputCausingError
-            done()
-          deadletter = 'dead-'+options.inports.key.queue
-          client = msgflo.transport.getClient address
-          client.connect (err) ->
+          client.createQueue 'outqueue', deadletter, (err) ->
             chai.expect(err).to.not.exist
-
-            client.createQueue 'outqueue', deadletter, (err) ->
+            client.subscribeToQueue deadletter, onDeadletter, (err) ->
               chai.expect(err).to.not.exist
-              client.subscribeToQueue deadletter, onDeadletter, (err) ->
+              client.sendTo 'inqueue', options.inports.key.queue, inputCausingError, (err) ->
                 chai.expect(err).to.not.exist
-                client.sendTo 'inqueue', options.inports.key.queue, inputCausingError, (err) ->
-                  chai.expect(err).to.not.exist
 
 
 describe 'Mount', ->
