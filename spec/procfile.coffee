@@ -12,6 +12,7 @@ describe 'noflo-msgflo-procfile', ->
 
   describe "imgflo-server.fbp", ->
     it 'outputs a Procfile to stdout', (done) ->
+      @timeout 4000
       expected = """
       imgflo_worker: noflo-runtime-msgflo --graph imgflo-server/ProcessImage
       web: node index.js
