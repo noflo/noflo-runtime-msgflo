@@ -33,6 +33,7 @@ wrapOutport = (client, instance, port, queueName) ->
   socket = noflo.internalSocket.createSocket()
   instance.outPorts[port].attach socket
   groups = []
+  dataReceived = false
 
   # TODO: NACK or kill when output is inproperly grouped
   socket.on 'begingroup', (group) ->
@@ -41,22 +42,27 @@ wrapOutport = (client, instance, port, queueName) ->
   socket.on 'endgroup', (group) ->
     debug 'endGroup', port, group
     groups.pop()
+    return if groups.length
+    return unless dataReceived
+    dataReceived = false
+    # ack/nack
+    msg =
+      amqp:
+        fields:
+          deliveryTag: group
+      data: null
+    if port is 'error'
+      client.nackMessage msg, false, false
+    else
+      client.ackMessage msg
+
   socket.on 'disconnect', ->
     debug 'onDisconnect', port, groups
     groups = []
 
   socket.on 'data', (data) ->
     debug 'onOutMessage', port, typeof data, groups
-    # ack/nack
-    msg =
-      amqp:
-        fields:
-          deliveryTag: groups[0]
-      data: null
-    if port == 'error'
-      client.nackMessage msg, false, false
-    else
-      client.ackMessage msg
+    dataReceived = true if groups.length
 
     # Send to outport
     return if not queueName # hidden
