@@ -12,6 +12,24 @@ transports =
 #  'MQTT': 'mqtt://localhost'
   'AMQP': 'amqp://localhost'
 
+objectValues = (o) ->
+  Object.keys(o).map (k) -> o[k]
+
+# Need to ensure that if coordinator has already received participant
+# we still fire the callback
+onParticipantAdded = (coordinator, name, callback) ->
+  participantMatches = (p) ->
+    return p.id.indexOf(name) != -1
+  returned = false
+  onAdded = (p) ->
+    return if returned
+    return if not participantMatches p
+    returned = true
+    return callback p
+  coordinator.once 'participant-added', onAdded
+  matches = objectValues(coordinator.participants).filter participantMatches
+  onAdded matches[0] if matches.length
+
 transportTest = (address) ->
   coordinator = null
 
@@ -43,13 +61,13 @@ transportTest = (address) ->
       m.stop done
 
     it 'should connect to broker', (done) ->
-      coordinator.once 'participant-added', (participant) ->
+      onParticipantAdded coordinator, options.name, (participant) ->
         chai.expect(participant.id).to.contain options.name
         done()
 
     describe 'sending to input queue', ->
       it 'should come out on output queue', (done) ->
-        coordinator.once 'participant-added', (participant) ->
+        onParticipantAdded coordinator, options.name, (participant) ->
           chai.expect(participant.id).to.contain options.name
           part = participant.id
           coordinator.subscribeTo part, 'out', (msg) ->
