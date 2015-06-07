@@ -7,6 +7,7 @@ async = require 'async'
 msgflo = require 'msgflo'
 
 debug = require('debug')('noflo-runtime-msgflo:mount')
+debugError = require('debug')('noflo-runtime-msgflo:error')
 
 wrapInport = (client, instance, port, queueName) ->
   debug 'wrapInport', port, queueName
@@ -63,6 +64,7 @@ wrapOutport = (client, instance, port, queueName) ->
   socket.on 'data', (data) ->
     debug 'onOutMessage', port, typeof data, groups
     dataReceived = true if groups.length
+    debugError 'ERROR', data if port == 'error'
 
     # Send to outport
     return if not queueName # hidden
