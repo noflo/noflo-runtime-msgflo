@@ -1,7 +1,6 @@
 common = require './common'
 
 path = require 'path'
-
 noflo = require 'noflo'
 async = require 'async'
 msgflo = require 'msgflo'
@@ -9,7 +8,38 @@ msgflo = require 'msgflo'
 debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
 
-wrapInport = (client, instance, port, queueName) ->
+try
+  nr = require 'newrelic'
+catch e
+  debug 'New Relic integration disabled', e.toString()
+
+createTransaction = (name, group) ->
+  wrapper = () ->
+    # do nothing, just using wrapper to capture 'this'
+    # XXX: do we need to bind it? using =>
+    return () ->
+      nr.endTransaction()
+
+  nr.createBackgroundTransaction name, group, wrapper  
+  return wrapper # callback which will end the transaction
+
+class Transactions
+  constructor: (@group, @name) ->
+    @transactions = {}
+
+  # XXX> maybe use recordCustomEvent with a payload instead of this crack??
+  open: (id) ->
+    return if not nr?
+    @transactions[id] = createTransaction @name, @group
+
+  close: (id) ->
+    return if not nr?
+    transaction = @transactions[id]
+    if transaction
+      transaction()
+      delete @transactions[id]
+
+wrapInport = (transactions, client, instance, port, queueName) ->
   debug 'wrapInport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.inPorts[port].attach socket
@@ -19,6 +49,7 @@ wrapInport = (client, instance, port, queueName) ->
     debug 'onInMessage', typeof msg.data, msg.data, groupId
     return unless msg.data
 
+    transactions.open groupId
     socket.connect()
     socket.beginGroup groupId
     socket.send msg.data
@@ -29,7 +60,7 @@ wrapInport = (client, instance, port, queueName) ->
   client.subscribeToQueue queueName, onMessage, (err) ->
     throw err if err
 
-wrapOutport = (client, instance, port, queueName) ->
+wrapOutport = (transactions, client, instance, port, queueName) ->
   debug 'wrapOutport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.outPorts[port].attach socket
@@ -56,6 +87,7 @@ wrapOutport = (client, instance, port, queueName) ->
       client.nackMessage msg, false, false
     else
       client.ackMessage msg
+    transactions.close group
 
   socket.on 'disconnect', ->
     debug 'onDisconnect', port, groups
@@ -173,6 +205,7 @@ class Mounter
     @loader = new noflo.ComponentLoader @options.basedir
     @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
     @instance = null # noflo.Component instance
+    @transactions = new Transactions 'msgflo', @options.name
 
   start: (callback) ->
     @client.connect (err) =>
@@ -189,9 +222,9 @@ class Mounter
           return callback err if err
 
           for port in definition.inports
-            wrapInport @client, instance, port.id, port.queue
+            wrapInport @transactions, @client, instance, port.id, port.queue
           for port in definition.outports
-            wrapOutport @client, instance, port.id, port.queue
+            wrapOutport @transactions, @client, instance, port.id, port.queue
 
           # Send discovery package to broker on 'fbp' queue
           @sendParticipant definition, (err) ->
