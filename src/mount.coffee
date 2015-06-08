@@ -9,6 +9,7 @@ debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
 
 try
+  debug 'attempt load New Relic'
   nr = require 'newrelic'
 catch e
   debug 'New Relic integration disabled', e.toString()
@@ -24,19 +25,31 @@ createTransaction = (name, group) ->
   return wrapper # callback which will end the transaction
 
 class Transactions
-  constructor: (@group, @name) ->
+  constructor: (@name) ->
     @transactions = {}
 
-  # XXX> maybe use recordCustomEvent with a payload instead of this crack??
-  open: (id) ->
+  open: (id, port) ->
     return if not nr?
-    @transactions[id] = createTransaction @name, @group
+    debug 'Transaction.open', id
+    @transactions[id] =
+      id: id
+      start: Date.now()
+      inport: port
 
-  close: (id) ->
+  close: (id, port) ->
     return if not nr?
     transaction = @transactions[id]
     if transaction
-      transaction()
+      debug 'Transaction.close', id
+      duration = Date.now()-transaction.start
+      event =
+        role: @name
+        inport: transaction.inport
+        outport: port
+        duration: duration
+      name = 'MsgfloJobCompleted'
+      nr.recordCustomEvent name, event
+      debug 'recorded event', name, event
       delete @transactions[id]
 
 wrapInport = (transactions, client, instance, port, queueName) ->
@@ -49,7 +62,7 @@ wrapInport = (transactions, client, instance, port, queueName) ->
     debug 'onInMessage', typeof msg.data, msg.data, groupId
     return unless msg.data
 
-    transactions.open groupId
+    transactions.open groupId, port
     socket.connect()
     socket.beginGroup groupId
     socket.send msg.data
@@ -87,7 +100,7 @@ wrapOutport = (transactions, client, instance, port, queueName) ->
       client.nackMessage msg, false, false
     else
       client.ackMessage msg
-    transactions.close group
+    transactions.close group, port
 
   socket.on 'disconnect', ->
     debug 'onDisconnect', port, groups
@@ -205,7 +218,7 @@ class Mounter
     @loader = new noflo.ComponentLoader @options.basedir
     @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
     @instance = null # noflo.Component instance
-    @transactions = new Transactions 'msgflo', @options.name
+    @transactions = new Transactions @options.name
 
   start: (callback) ->
     @client.connect (err) =>
