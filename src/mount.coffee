@@ -110,7 +110,7 @@ wrapOutport = (transactions, client, instance, port, queueName) ->
     debug 'onOutMessage', port, typeof data, groups
     dataReceived = true if groups.length
     debugError 'ERROR', data if port == 'error'
-    debugError 'STACK', '\n'+data.stack if port == 'error' if data.stack
+    debugError 'STACK', '\n'+data.stack if port == 'error' and data?.stack
 
     # Send to outport
     return if not queueName # hidden
