@@ -197,6 +197,15 @@ describe 'Mount', ->
     describe ", transport=#{type}: ", () ->
       transportTest address
 
+    describe 'attempting stop without start', () ->
+      it 'should return sucess without doing anything', (done) ->
+        options =
+          broker: address
+          graph: 'core/RepeatAsync'
+          name: '1someone'+randomstring.generate 4
+        m = new mount.Mounter options
+        m.stop done
+
     describe "options", ->
       describe 'default', ->
          process.env['CLOUDAMQP_URL'] = 'amqp://localhost'

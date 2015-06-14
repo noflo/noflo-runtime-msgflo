@@ -221,6 +221,7 @@ class Mounter
     @transactions = new Transactions @options.name
 
   start: (callback) ->
+    debug 'starting'
     @client.connect (err) =>
       return callback err if err
       loadAndStartGraph @loader, @options.graph, (err, instance) =>
@@ -244,14 +245,16 @@ class Mounter
             return callback err
 
   stop: (callback) ->
-    return callback null if not @graph
-    @graph.shutdown (err) =>
-      @graph = null
-      return callback err if err
-      return callback null if not @client
-      @client.disconnect (err) =>
-        @client = null
-        return callback err
+    return callback null if not @instance
+    debug 'stopping'
+    @instance.shutdown()
+    @instance = null
+    debug 'stopped component'
+    return callback null if not @client
+    @client.disconnect (err) =>
+      debug 'disconnected client', err
+      @client = null
+      return callback err
 
   getDefinition: () ->
     return null if not @instance
