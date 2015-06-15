@@ -14,16 +14,6 @@ try
 catch e
   debug 'New Relic integration disabled', e.toString()
 
-createTransaction = (name, group) ->
-  wrapper = () ->
-    # do nothing, just using wrapper to capture 'this'
-    # XXX: do we need to bind it? using =>
-    return () ->
-      nr.endTransaction()
-
-  nr.createBackgroundTransaction name, group, wrapper  
-  return wrapper # callback which will end the transaction
-
 class Transactions
   constructor: (@name) ->
     @transactions = {}
