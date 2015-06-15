@@ -11,6 +11,7 @@ parse = (args) ->
     .option('--basedir <path>', 'Base directory for NoFlo components', String, '')
     .option('--prefetch <number>', 'How many concurrent jobs / prefetching', Number, 1)
     .option('--name <name[*]>', 'Name of client. Wildcards replaced with random string', String, 'noflo-runtime-msgflo-*')
+    .option('--deadletter <in1,in2>', 'Set up deadlettering queues for the named inport', String, '')
     .option('--attr key.subkey=value', 'Additional attributes', addOption, [])
     .parse args
 

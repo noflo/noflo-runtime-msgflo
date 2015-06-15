@@ -120,6 +120,16 @@ setupQueues = (client, def, callback) ->
     return callback err if err
     async.map outports, setupOut, callback
 
+setupDeadLettering = (client, inports, deadletters, callback) ->
+  # NOTE: relies on msgflo setting up the deadletter exchange with matching naming convention
+  setupDeadletter = (name, cb) ->
+    console.log port, inports, name
+    port = inports.filter((p) -> p.id == name)[0]
+    deadletter = 'dead-'+port.queue
+    client.createQueue 'inqueue', deadletter, cb
+
+  async.map deadletters, setupDeadletter, callback
+
 loadAndStartGraph = (loader, graphName, callback) ->
   loader.load graphName, (err, instance) ->
     return callback err if err
@@ -185,7 +195,10 @@ applyOption = (obj, option) ->
 exports.normalizeOptions = normalizeOptions = (opt) ->
   options = common.clone opt
 
+  options.deadletter = options.deadletter.split(',') if options.deadletter
+
   # defaults
+  options.deadletter = [] if not options.deadletter
   options.inports = {} if not options.inports
   options.outports = {} if not options.outports
   options.basedir = process.cwd() if not options.basedir
@@ -230,9 +243,12 @@ class Mounter
           for port in definition.outports
             wrapOutport @transactions, @client, instance, port.id, port.queue
 
-          # Send discovery package to broker on 'fbp' queue
-          @sendParticipant definition, (err) ->
-            return callback err
+          setupDeadLettering @client, definition.inports, @options.deadletter, (err) =>
+            return callback err if err
+
+            # Send discovery package to broker on 'fbp' queue
+            @sendParticipant definition, (err) ->
+              return callback err
 
   stop: (callback) ->
     return callback null if not @instance

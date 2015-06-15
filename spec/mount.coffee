@@ -160,12 +160,13 @@ transportTest = (address) ->
         name: 'deadlettering'+id
         inports:
           key:
-            queue: '_input44'+id
+            hidden: false
         outports:
           error:
             hidden: true
           out:
             hidden: true
+        deadletter: 'key'
       m = new mount.Mounter options
       m.start done
     afterEach (done) ->
@@ -173,21 +174,20 @@ transportTest = (address) ->
 
     describe 'input message causing error', ->
       it 'should be sent to deadletter queue', (done) ->
+        @timeout 4000
         inputCausingError = '__non_exitsting_envvar___'
         onDeadletter = (msg) ->
           chai.expect(msg.data).to.eql inputCausingError
           done()
-        deadletter = 'dead-'+options.inports.key.queue
+        inPort = m.getDefinition().inports.filter((p) -> p.id == 'key')[0]
+        deadletter = 'dead-'+inPort.queue
         client = msgflo.transport.getClient address
         client.connect (err) ->
           chai.expect(err).to.not.exist
-
-          client.createQueue 'outqueue', deadletter, (err) ->
+          client.subscribeToQueue deadletter, onDeadletter, (err) ->
             chai.expect(err).to.not.exist
-            client.subscribeToQueue deadletter, onDeadletter, (err) ->
+            client.sendTo 'inqueue', inPort.queue, inputCausingError, (err) ->
               chai.expect(err).to.not.exist
-              client.sendTo 'inqueue', options.inports.key.queue, inputCausingError, (err) ->
-                chai.expect(err).to.not.exist
 
 
 describe 'Mount', ->
@@ -248,3 +248,9 @@ describe 'Mount', ->
       describe 'invalid --attr', () ->
         it 'should be handled somehow...'
 
+      describe 'deadletter=in,item,foo', ->
+        it 'should be split into an array', ->
+          input =
+            deadletter: 'in,item,foo'
+          options = mount.normalizeOptions input
+          chai.expect(options.deadletter).to.eql ['in', 'item', 'foo']
