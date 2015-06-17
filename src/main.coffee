@@ -6,7 +6,7 @@ addOption = (val, list) ->
 
 parse = (args) ->
   program
-    .option('--broker <url>', 'Address of messaging broker', String, 'amqp://localhost')
+    .option('--broker <url>', 'Address of messaging broker', String, '')
     .option('--graph <GraphName>', 'Default graph file to load', String, 'core/Repeat')
     .option('--basedir <path>', 'Base directory for NoFlo components', String, '')
     .option('--prefetch <number>', 'How many concurrent jobs / prefetching', Number, 1)
