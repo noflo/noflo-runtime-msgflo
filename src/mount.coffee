@@ -123,7 +123,6 @@ setupQueues = (client, def, callback) ->
 setupDeadLettering = (client, inports, deadletters, callback) ->
   # NOTE: relies on msgflo setting up the deadletter exchange with matching naming convention
   setupDeadletter = (name, cb) ->
-    console.log port, inports, name
     port = inports.filter((p) -> p.id == name)[0]
     deadletter = 'dead-'+port.queue
     client.createQueue 'inqueue', deadletter, cb
