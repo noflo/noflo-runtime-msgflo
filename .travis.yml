@@ -19,3 +19,11 @@ before_script:
 - npm install -g grunt-cli
 script:
 - npm test
+deploy:
+  provider: npm
+  email: jononor@gmail.com
+  api_key:
+    secure: StmXxkIR+mp8lNbTEAX6mnhXg0o8+iIHhHGJaiLRSdb1swVcp70SpftPVMnbH2Sg5KE37m5M2MSeY7OWqLe0cOHHMnBYK+cKIw9fbUrRAohhHLzWfu5rQtndnCAN2EfIGXNwTQpTKWdnqjT557ZwVr+itWJnSS2E7xswXPhVcQ4=
+  on:
+    tags: true
+    repo: noflo/noflo-runtime-msgflo
