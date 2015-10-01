@@ -27,7 +27,7 @@
     "noflo": "0.5.13"
   },
   "devDependencies": {
-    "chai": "1.10.0",
+    "chai": "3.3.0",
     "grunt": "0.4.5",
     "mocha": "2.3.3",
     "noflo-core": "0.1.14",
