@@ -20,10 +20,10 @@ parse = (args) ->
     
 main = ->
   options = parse process.argv
-  m = new mount.Mounter program
-  m.start (err) ->
+  m = new mount.Mounter options
+  m.start (err, def) ->
     throw err if err
-    console.log 'Started', program.broker
+    console.log 'noflo-runtime-msgflo started:', "#{def.name}(#{def.graph})"
 
 exports.parse = parse
 exports.main = main

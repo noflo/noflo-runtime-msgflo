@@ -246,8 +246,8 @@ class Mounter
             return callback err if err
 
             # Send discovery package to broker on 'fbp' queue
-            @sendParticipant definition, (err) ->
-              return callback err
+            @sendParticipant definition, (err) =>
+              return callback err, @options
 
   stop: (callback) ->
     return callback null if not @instance
