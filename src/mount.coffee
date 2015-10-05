@@ -48,9 +48,14 @@ wrapInport = (transactions, client, instance, port, queueName) ->
   instance.inPorts[port].attach socket
 
   onMessage = (msg) ->
-    groupId = msg.amqp.fields.deliveryTag
+    groupId = msg?.amqp?.fields?.deliveryTag
     debug 'onInMessage', typeof msg.data, msg.data, groupId
     return unless msg.data
+    unless groupId
+      socket.connect()
+      socket.send msg.data
+      socket.disconnect()
+      return
 
     transactions.open groupId, port
     socket.connect()
