@@ -4,6 +4,7 @@ path = require 'path'
 noflo = require 'noflo'
 async = require 'async'
 msgflo = require 'msgflo'
+uuid = require 'uuid'
 
 debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
@@ -49,13 +50,9 @@ wrapInport = (transactions, client, instance, port, queueName) ->
 
   onMessage = (msg) ->
     groupId = msg?.amqp?.fields?.deliveryTag
+    groupId = uuid.v4() if not groupId
     debug 'onInMessage', typeof msg.data, msg.data, groupId
     return unless msg.data
-    unless groupId
-      socket.connect()
-      socket.send msg.data
-      socket.disconnect()
-      return
 
     transactions.open groupId, port
     socket.connect()
