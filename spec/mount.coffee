@@ -9,7 +9,7 @@ mount = require('..').mount
 # Note: most require running an external broker service
 transports =
 #  'direct': 'direct://broker1'
-#  'MQTT': 'mqtt://localhost'
+  'MQTT': 'mqtt://localhost'
   'AMQP': 'amqp://localhost'
 
 objectValues = (o) ->
@@ -179,6 +179,7 @@ transportTest = (address) ->
 
     describe 'input message causing error', ->
       it 'should be sent to deadletter queue', (done) ->
+        return @skip() if address.substr(0, 4) is 'mqtt'
         @timeout 4000
         inputCausingError = '__non_exitsting_envvar___'
         onDeadletter = (msg) ->
