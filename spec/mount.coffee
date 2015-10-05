@@ -179,7 +179,7 @@ transportTest = (address) ->
 
     describe 'input message causing error', ->
       it 'should be sent to deadletter queue', (done) ->
-        return done() if address.substr(0, 4) is 'mqtt'
+        return @skip() if address.substr(0, 4) is 'mqtt'
         @timeout 4000
         inputCausingError = '__non_exitsting_envvar___'
         onDeadletter = (msg) ->
