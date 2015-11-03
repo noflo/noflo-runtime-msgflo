@@ -33,7 +33,7 @@
     "mocha": "2.3.3",
     "noflo-core": "0.1.14",
     "noflo-objects": "0.1.12",
-    "randomstring": "1.1.0"
+    "randomstring": "1.1.2"
   },
   "bin": {
     "noflo-runtime-msgflo": "./bin/noflo-runtime-msgflo"
