@@ -24,7 +24,7 @@
     "fbp": "1.1.4",
     "msgflo": "0.5.15",
     "newrelic": "1.22.1",
-    "noflo": "0.5.13",
+    "noflo": "0.5.14",
     "uuid": "^2.0.1"
   },
   "devDependencies": {
