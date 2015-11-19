@@ -13,6 +13,7 @@ parse = (args) ->
     .option('--name <name[*]>', 'Name of client. Wildcards replaced with random string', String, 'noflo-runtime-msgflo-*')
     .option('--deadletter <in1,in2>', 'Set up deadlettering queues for the named inport', String, '')
     .option('--attr key.subkey=value', 'Additional attributes', addOption, [])
+    .option('--trace', 'Enable tracing with Flowtrace', Boolean, false)
     .parse args
 
   delete program.options # not clone()able

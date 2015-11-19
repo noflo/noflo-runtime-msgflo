@@ -6,6 +6,7 @@ noflo = require 'noflo'
 async = require 'async'
 msgflo = require 'msgflo'
 uuid = require 'uuid'
+trace = require('noflo-runtime-base').trace
 
 debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
@@ -187,10 +188,16 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
 class Mounter
   constructor: (options) ->
     @options = normalizeOptions options
-    @loader = new noflo.ComponentLoader @options.basedir
     @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
+    @loader = new noflo.ComponentLoader @options.basedir
     @instance = null # noflo.Component instance
     @transactions = new newrelic.Transactions @options.name
+    @tracer = new trace.Tracer {}
+
+    process.on 'SIGUSR2', () =>
+      return console.log 'ERROR: Tracing not enabled' if not @options.trace
+      @tracer.dumpFile null, (err, fname) ->
+        console.log 'Wrote flowtrace to:', fname
 
   start: (callback) ->
     debug 'starting'
@@ -200,6 +207,7 @@ class Mounter
         return callback err if err
         debug 'started graph', @options.graph
         @instance = instance
+        @tracer.attach instance.network if @options.trace
 
         definition = @getDefinition instance
         @setupQueuesForComponent instance, definition, (err) =>

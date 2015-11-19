@@ -25,6 +25,7 @@
     "msgflo": "0.5.15",
     "newrelic": "1.22.1",
     "noflo": "0.5.13",
+    "noflo-runtime-base": "^0.6.1",
     "uuid": "^2.0.1"
   },
   "devDependencies": {
