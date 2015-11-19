@@ -7,6 +7,9 @@ async = require 'async'
 msgflo = require 'msgflo'
 uuid = require 'uuid'
 
+debug = require('debug')('noflo-runtime-msgflo:mount')
+debugError = require('debug')('noflo-runtime-msgflo:error')
+
 wrapInport = (transactions, client, instance, port, queueName) ->
   debug 'wrapInport', port, queueName
   socket = noflo.internalSocket.createSocket()
