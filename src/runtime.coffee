@@ -1,5 +1,6 @@
 
 Base = require 'noflo-runtime-base'
+debug = debug = require('debug')('noflo-runtime-msgflo:runtime')
 
 class SendReceivePair
   constructor: (@client, baseName, options = {}) ->
@@ -19,6 +20,7 @@ class SendReceivePair
         return callback err if err
 
         receiveHandler = (msg) =>
+          debug 'SendReceivePair.receive', msg?.data?.protocol, msg?.data?.command
           @onReceive msg.data
           @client.ackMessage msg
         return @client.subscribeToQueue @receiveName, receiveHandler, callback
@@ -32,7 +34,7 @@ class SendReceivePair
     if not callback
       callback = () ->
 
-    @client.sendToQueue 'outqueue', @sendName, msg, callback
+    @client.sendTo 'outqueue', @sendName, data, callback
 
   onReceive: (data) ->
     # override

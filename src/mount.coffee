@@ -1,5 +1,6 @@
 common = require './common'
 newrelic = require './newrelic'
+runtime = require './runtime'
 
 path = require 'path'
 noflo = require 'noflo'
@@ -193,6 +194,7 @@ class Mounter
     @instance = null # noflo.Component instance
     @transactions = new newrelic.Transactions @options.name
     @tracer = new trace.Tracer {}
+    @coordinator = null
 
     process.on 'SIGUSR2', () =>
       return console.log 'ERROR: Tracing not enabled' if not @options.trace
@@ -210,12 +212,18 @@ class Mounter
         @tracer.attach instance.network if @options.trace
 
         definition = @getDefinition instance
-        @setupQueuesForComponent instance, definition, (err) =>
+        @coordinator = new runtime.SendReceivePair @client, ".fbp.#{definition.id}"
+        @coordinator.onReceive = (data) =>
+          @handleFbpMessage data
+        @coordinator.create (err) =>
           return callback err if err
 
-          # Send discovery package to broker on 'fbp' queue
-          @sendParticipant definition, (err) =>
-            return callback err, @options
+          @setupQueuesForComponent instance, definition, (err) =>
+            return callback err if err
+
+            # Send discovery package to broker on 'fbp' queue
+            @sendParticipant definition, (err) =>
+              return callback err, @options
 
   stop: (callback) ->
     return callback null if not @instance
@@ -250,6 +258,28 @@ class Mounter
   sendParticipant: (definition, callback) ->
     debug 'sendParticipant', definition.id
     @client.registerParticipant definition, callback
+
+  handleFbpMessage: (data) ->
+    { protocol, command, payload } = data
+    return if protocol != 'trace'
+
+    # Handle trace subprotocol
+    switch command
+      when 'start'
+        @tracer.attach @instance.network
+        @coordinator?.send data
+      when 'stop'
+        null # FIXME: implement
+        @coordinator?.send data
+      when 'clear'
+        null # FIXME: implement
+        @coordinator?.send data
+      when 'dump'
+        @tracer.dumpString (err, trace) ->
+          reply = common.clone data
+          reply.payload.flowtrace = trace
+          @coordinator.send reply
+
 
 exports.Mounter = Mounter
 
