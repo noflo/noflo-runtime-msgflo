@@ -183,6 +183,7 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
 
   return options
 
+
 class Mounter
   constructor: (options) ->
     @options = normalizeOptions options
@@ -201,22 +202,12 @@ class Mounter
         @instance = instance
 
         definition = @getDefinition instance
-        # TODO: support queues being set up over FBP protocol
-        setupQueues @client, definition, (err) =>
-          debug 'queues set up', err
+        @setupQueuesForComponent instance, definition, (err) =>
           return callback err if err
 
-          for port in definition.inports
-            wrapInport @transactions, @client, instance, port.id, port.queue
-          for port in definition.outports
-            wrapOutport @transactions, @client, instance, port.id, port.queue
-
-          setupDeadLettering @client, definition.inports, @options.deadletter, (err) =>
-            return callback err if err
-
-            # Send discovery package to broker on 'fbp' queue
-            @sendParticipant definition, (err) =>
-              return callback err, @options
+          # Send discovery package to broker on 'fbp' queue
+          @sendParticipant definition, (err) =>
+            return callback err, @options
 
   stop: (callback) ->
     return callback null if not @instance
@@ -229,6 +220,20 @@ class Mounter
       debug 'disconnected client', err
       @client = null
       return callback err
+
+  setupQueuesForComponent: (instance, definition, callback) ->
+    setupQueues @client, definition, (err) =>
+      debug 'queues set up', err
+      return callback err if err
+
+      for port in definition.inports
+        wrapInport @transactions, @client, instance, port.id, port.queue
+      for port in definition.outports
+        wrapOutport @transactions, @client, instance, port.id, port.queue
+
+      setupDeadLettering @client, definition.inports, @options.deadletter, (err) =>
+        return callback err if err
+        return callback null
 
   getDefinition: () ->
     return null if not @instance
