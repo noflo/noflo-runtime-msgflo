@@ -22,6 +22,12 @@ parse = (args) ->
 main = ->
   options = parse process.argv
   m = new mount.Mounter options
+
+  process.on 'SIGUSR2', () =>
+    return console.log 'ERROR: Tracing not enabled' if not options.trace
+    m.tracer.dumpFile null, (err, fname) ->
+      console.log 'Wrote flowtrace to:', fname
+
   m.start (err, def) ->
     throw err if err
     console.log 'noflo-runtime-msgflo started:', "#{def.name}(#{def.graph})"

@@ -196,11 +196,6 @@ class Mounter
     @tracer = new trace.Tracer {}
     @coordinator = null
 
-    process.on 'SIGUSR2', () =>
-      return console.log 'ERROR: Tracing not enabled' if not @options.trace
-      @tracer.dumpFile null, (err, fname) ->
-        console.log 'Wrote flowtrace to:', fname
-
   start: (callback) ->
     debug 'starting'
     @client.connect (err) =>
