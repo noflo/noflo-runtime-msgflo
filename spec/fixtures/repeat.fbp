@@ -1,0 +1,5 @@
+# !runtime noflo
+INPORT=one.IN:IN
+OUTPORT=two.OUT:OUT
+
+one(core/RepeatAsync) OUT -> IN two(core/RepeatAsync)

@@ -275,10 +275,10 @@ class Mounter
         null # FIXME: implement
         @coordinator?.send data
       when 'dump'
-        @tracer.dumpString (err, trace) ->
+        @tracer.dumpString (err, trace) =>
           reply = common.clone data
           reply.payload.flowtrace = trace
-          @coordinator.send reply
+          @coordinator?.send reply
 
 
 exports.Mounter = Mounter

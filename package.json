@@ -22,7 +22,7 @@
     "commander": "2.8.1",
     "debug": "2.2.0",
     "fbp": "1.1.4",
-    "msgflo": "0.5.15",
+    "msgflo": "~0.5.18",
     "newrelic": "1.22.1",
     "noflo": "0.5.13",
     "noflo-runtime-base": "^0.6.1",
@@ -32,7 +32,7 @@
     "chai": "3.3.0",
     "grunt": "0.4.5",
     "mocha": "2.3.3",
-    "noflo-core": "0.1.14",
+    "noflo-core": "^0.1.14",
     "noflo-objects": "0.1.12",
     "randomstring": "1.1.0"
   },
@@ -42,5 +42,10 @@
   "main": "./runtime/network.js",
   "scripts": {
     "test": "mocha --reporter spec --compilers coffee:coffee-script/register spec/*.coffee"
+  },
+  "noflo": {
+    "graphs": {
+      "RepeatTest": "spec/fixtures/repeat.fbp"
+    }
   }
 }
