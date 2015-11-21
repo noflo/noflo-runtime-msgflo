@@ -22,36 +22,38 @@ transportTests = (address) ->
     spy = null
     started = false
     participant = null
+    testid = ''
 
     beforeEach (done) ->
       @timeout 6*1000
+      testid = randomstring.generate 4
       options =
         broker: address
         graph: 'RepeatTest'
-        name: '3anyone-'+randomstring.generate 4        
+        name: '3anyone-'+testid
         trace: true # enable tracing
 
-      spy = new msgflo.utils.spy address, 'tracingspy', { 'repeated': "#{options.name}.OUT" }
+      spy = new msgflo.utils.spy address, "tracingspy-#{testid}", { 'repeated': "#{options.name}.OUT" }
       m = new mount.Mounter options
 
       broker.subscribeParticipantChange (msg) ->
-        #console.log 'participant discovered', msg.data.payload
         return broker.nackMessage(msg) if started
         broker.ackMessage msg
 
         participant = msg.data.payload 
         if participant.role != options.name
-          console.log "WARN: tracing test got unexpected participant #{participant.role}" if participant.role != 'tracingspy'
+          console.log "WARN: tracing test got unexpected participant #{participant.role}" if participant.role != "tracingspy-#{testid}"
           return
 
         started = true
         spy.startSpying (err) ->
           return done err if err
           # process some data
-          onOutputReceived = 
-          spy.getMessages 'repeated', 1, (data) ->
-            err = if data.repeat == 'this!' then null else new Error "wrong output data: #{data}"
-            spy.stop done
+          spy.getMessages 'repeated', 1, (messages) ->
+            data = messages[0]
+            err = if data.repeat == 'this!' then null else new Error "wrong output data: #{JSON.stringify(data)}"
+            done err
+#            spy.stop done
           broker.sendTo 'inqueue', "#{participant.role}.IN", { repeat: 'this!' }, (err) ->
             return done err if err
 
@@ -90,11 +92,11 @@ transportTests = (address) ->
           chai.expect(events).to.eql ['connect', 'data', 'disconnect']
           return done()
 
-        spy = new msgflo.utils.spy address, 'protocolspy', { 'reply': fbpQueue.OUT }
-        spy.getMessages 'reply', 1, (messages) ->
-          onTraceReceived messages[0]
+        spy = new msgflo.utils.spy address, 'protocolspy-'+testid, { 'reply': fbpQueue.OUT }
         spy.startSpying (err) ->
           chai.expect(err).to.not.exist
+          spy.getMessages 'reply', 1, (messages) ->
+            onTraceReceived messages[0]
           broker.sendTo 'inqueue', fbpQueue.IN, msg, (err) ->
             chai.expect(err).to.not.exist
 
