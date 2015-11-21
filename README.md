@@ -33,7 +33,44 @@ Altenatively one can use the embedding API, see [src/mount.coffee](./src/mount.c
       # started
 
 
+## Debugging
+
+noflo-runtime-msgflo supports [flowtrace](https://github.com/flowbased/flowtrace) allows to trace & store the execution of the NoFlo network,
+so you can debug any issues that would occur.
+You can enable tracing using `--trace` commandline argument,
+or via the `trace:start` [FBP runtime protocol](http://noflojs.org/documentation/protocol/#trace) message.
+
+    noflo-runtime-msgflo --graph project/MyMainGraph --trace
+
+To trigger dumping a flowtrace locally, send the `SIGUSR2` Unix signal
+
+    kill -SIGUSR2 $PID_OF_PROCESS
+    ... Wrote flowtrace to: /tmp/1151020-12063-ami5vq.json
+
+Or, to trigger a flowtrace remotely, send a `trace:dump` FBP protocol message to the queue of participant.
+
+    msgflo-send-message --queue .fbp.$participantId.receive --json '{ "protocol":"trace", "command":"dump", "payload":{ "graph":"default", "type":"flowtrace.json"} }'
+
+Then, assuming `.fbp.$participantId.send` has been bound to queue `my-flowtraces`, one could download it
+
+    msgflo-dump-message --queue my-flowtraces --amount 1
+
+You can now use various flowtrace tools to introspect the data.
+For instance, you can get a human readable log using `flowtrace-show`
+
+    flowtrace-show /tmp/1151020-12063-ami5vq.json
+
+    -> IN repeat CONN
+    -> IN repeat DATA hello world
+    -> IN stdout CONN
+    -> IN stdout DATA hello world
+    -> IN repeat DISC
+    -> IN stdout DISC
+
+
 TODO
 -----
 
-* Implement FBP protocol over msgflo transport
+### 0.3
+
+* Implement [FBP protocol over msgflo](https://github.com/noflo/noflo-runtime-msgflo/issues/30) transport
