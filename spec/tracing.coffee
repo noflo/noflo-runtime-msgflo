@@ -6,6 +6,72 @@ randomstring = require 'randomstring'
 
 mount = require('..').mount
 
+waitStarted = (broker, role, callback) ->
+  started = false
+
+  broker.subscribeParticipantChange (msg) ->
+    return broker.nackMessage(msg) if started
+    broker.ackMessage msg
+
+    participant = msg.data.payload 
+    if participant.role != role
+      console.log "WARN: tracing test got unexpected participant #{participant.role}"
+      return
+
+    started = true
+    return callback null, participant
+
+processData = (broker, address, role, testid, callback) ->
+  spy = new msgflo.utils.spy address, "tracingspy-#{testid}", { 'repeated': "#{role}.OUT" }
+  spy.startSpying (err) ->
+    return done err if err
+    # process some data
+    spy.getMessages 'repeated', 1, (messages) ->
+      data = messages[0]
+      err = if data.repeat == role then null else new Error "wrong output data: #{JSON.stringify(data)}"
+      return callback err
+#            spy.stop done
+    broker.sendTo 'inqueue', "#{role}.IN", { repeat: role }, (err) ->
+      return done err, data if err
+
+requestTraceDump = (broker, address, participantId, testid, callback) ->
+  # TODO: have these queues declared in the discovery message. Don't rely on convention
+  fbpQueues =
+    IN: ".fbp.#{participantId}.receive"
+    OUT: ".fbp.#{participantId}.send" 
+  msg =
+    protocol: 'trace'
+    command: 'dump'
+    payload:
+      graph: 'default'
+      type: 'flowtrace.json'
+  onTraceReceived = (data) ->
+    return callback null, data
+
+  # Maybe don't use spy participant here, just regular
+  spy = new msgflo.utils.spy address, 'protocolspy-'+testid, { 'reply': fbpQueues.OUT }
+  spy.startSpying (err) ->
+    return callback err if err
+
+    spy.getMessages 'reply', 1, (messages) ->
+      onTraceReceived messages[0]
+    broker.sendTo 'inqueue', fbpQueues.IN, msg, (err) ->
+      return callback err if err
+
+validateTrace = (data) ->
+
+  chai.expect(data).to.have.keys [ 'protocol', 'command', 'payload' ]
+  chai.expect(data.protocol).to.eql 'trace'
+  chai.expect(data.command).to.eql 'dump'
+  p = data.payload
+  chai.expect(p).to.have.keys ['graph', 'type', 'flowtrace']
+  chai.expect(p.type).to.eql 'flowtrace.json'
+  trace = JSON.parse p.flowtrace
+  chai.expect(trace).to.have.keys ['header', 'events']
+  chai.expect(trace.events).to.be.an 'array'
+  events = trace.events.map (e) -> "#{e.command}"
+  chai.expect(events).to.eql ['connect', 'data', 'disconnect']
+
 transportTests = (address) ->
   broker = null
 
@@ -16,11 +82,9 @@ transportTests = (address) ->
   afterEach (done) ->
     broker.disconnect done
 
-  describe 'graph with proccessed data', ->
+  describe '--trace=true', ->
     m = null
     options = null
-    spy = null
-    started = false
     participant = null
     testid = ''
 
@@ -32,76 +96,31 @@ transportTests = (address) ->
         graph: 'RepeatTest'
         name: '3anyone-'+testid
         trace: true # enable tracing
-
-      spy = new msgflo.utils.spy address, "tracingspy-#{testid}", { 'repeated': "#{options.name}.OUT" }
       m = new mount.Mounter options
-
-      broker.subscribeParticipantChange (msg) ->
-        return broker.nackMessage(msg) if started
-        broker.ackMessage msg
-
-        participant = msg.data.payload 
-        if participant.role != options.name
-          console.log "WARN: tracing test got unexpected participant #{participant.role}" if participant.role != "tracingspy-#{testid}"
-          return
-
-        started = true
-        spy.startSpying (err) ->
-          return done err if err
-          # process some data
-          spy.getMessages 'repeated', 1, (messages) ->
-            data = messages[0]
-            err = if data.repeat == 'this!' then null else new Error "wrong output data: #{JSON.stringify(data)}"
-            done err
-#            spy.stop done
-          broker.sendTo 'inqueue', "#{participant.role}.IN", { repeat: 'this!' }, (err) ->
-            return done err if err
-
+      waitStarted broker, options.name, (err, p) ->
+        return done err if err
+        participant = p
+        return done err
       m.start (err) ->
         return done err if err
 
     afterEach (done) ->
       m.stop done
 
-    describe 'triggering with FBP protocol message', ->
-      it 'should return it over FBP protocol', (done) ->
+    describe 'process data, trigger via FBP protocol', ->
+      it 'should return flowtrace it over FBP protocol', (done) ->
         @timeout 4*1000
-
-        # TODO: have these queues declared in the discovery message. Don't rely on convention
-        fbpQueue =
-          IN: ".fbp.#{participant.id}.receive"
-          OUT: ".fbp.#{participant.id}.send"
-        msg =
-          protocol: 'trace'
-          command: 'dump'
-          payload:
-            graph: 'default'
-            type: 'flowtrace.json'
-        onTraceReceived = (data) ->
-          #console.log 'got trace', data
-          chai.expect(data).to.have.keys [ 'protocol', 'command', 'payload' ]
-          chai.expect(data.protocol).to.eql 'trace'
-          chai.expect(data.command).to.eql 'dump'
-          p = data.payload
-          chai.expect(p).to.have.keys ['graph', 'type', 'flowtrace']
-          chai.expect(p.type).to.eql 'flowtrace.json'
-          trace = JSON.parse p.flowtrace
-          chai.expect(trace).to.have.keys ['header', 'events']
-          chai.expect(trace.events).to.be.an 'array'
-          events = trace.events.map (e) -> "#{e.command}"
-          chai.expect(events).to.eql ['connect', 'data', 'disconnect']
-          return done()
-
-        spy = new msgflo.utils.spy address, 'protocolspy-'+testid, { 'reply': fbpQueue.OUT }
-        spy.startSpying (err) ->
+        processData broker, address, options.name, testid, (err) ->
           chai.expect(err).to.not.exist
-          spy.getMessages 'reply', 1, (messages) ->
-            onTraceReceived messages[0]
-          broker.sendTo 'inqueue', fbpQueue.IN, msg, (err) ->
+          requestTraceDump broker, address, participant.id, testid, (err, trace) ->
             chai.expect(err).to.not.exist
+            validateTrace trace
+            return done()
 
-    describe 'enabling tracing using FBP message', ->
-      it 'should respond with ack'
+  describe '--trace=false', ->
+    describe 'enable trace, process data, trigger via FBP protocol', ->
+      it 'enabling should respond with ack'
+      it 'should return flowtrace it over FBP protocol'
 
 describe 'Tracing', () ->
 
