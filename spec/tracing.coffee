@@ -22,7 +22,7 @@ waitStarted = (broker, role, callback) ->
     return callback null, participant
 
 processData = (broker, address, role, testid, callback) ->
-  spy = new msgflo.utils.spy address, "tracingspy-#{testid}", { 'repeated': "#{role}.OUT" }
+  spy = msgflo.utils.spy address, "tracingspy-#{testid}", { 'repeated': "#{role}.OUT" }
   spy.startSpying (err) ->
     return done err if err
     # process some data
@@ -40,15 +40,19 @@ sendReceiveFbp = (broker, address, participantId, testid, msg, callback) ->
     IN: ".fbp.#{participantId}.receive"
     OUT: ".fbp.#{participantId}.send"
   # FIXME: don't use Spy/Participant here. Instead runtime.SendReceivePair ?
-  spy = new msgflo.utils.spy address, 'protocolspy-'+testid, { 'reply': fbpQueues.OUT }
+
+  spy = msgflo.utils.spy address, 'protocolspy-'+testid+'-'+randomstring.generate(2), { 'reply': fbpQueues.OUT }
+  cleanCallback = (err, data) ->
+    return callback err, data
+
   spy.startSpying (err) ->
-    return callback err if err
+    return cleanCallback err if err
 
     spy.getMessages 'reply', 1, (messages) ->
       data = messages[0]
-      return callback null, data
+      return cleanCallback null, data
     broker.sendTo 'inqueue', fbpQueues.IN, msg, (err) ->
-      return callback err if err
+      return cleanCallback err if err
 
 requestTraceDump = (broker, address, participantId, testid, callback) ->
   msg =
@@ -109,7 +113,7 @@ transportTests = (address) ->
       m.stop done
 
     describe 'process data, trigger via FBP protocol', ->
-      it 'should return flowtrace it over FBP protocol', (done) ->
+      it 'should return flowtrace over FBP protocol', (done) ->
         @timeout 4*1000
         processData broker, address, options.name, testid, (err) ->
           chai.expect(err).to.not.exist
@@ -131,7 +135,7 @@ transportTests = (address) ->
         broker: address
         graph: 'RepeatTest'
         name: 'tracefalse-'+testid
-        trace: true # enable tracing
+        trace: false # disable tracing
       m = new mount.Mounter options
       waitStarted broker, options.name, (err, p) ->
         return done err if err
@@ -144,21 +148,31 @@ transportTests = (address) ->
       m.stop done
 
     describe 'enabling tracing over FBP protocol', () ->
-      it 'should respond with ack', (done) ->
-        msg =
-          protocol: 'trace'
-          command: 'start'
-          payload:
-            graph: 'default'
-            type: 'flowtrace.json'
-        sendReceiveFbp broker, address, participant.id, testid, msg, (err, reply) ->
+      enableMsg =
+        protocol: 'trace'
+        command: 'start'
+        payload:
+          graph: 'default'
+          type: 'flowtrace.json'
+
+      it.skip 'should respond with ack', (done) ->
+        sendReceiveFbp broker, address, participant.id, testid, enableMsg, (err, reply) ->
           chai.expect(err).to.not.exist
-          chai.expect(reply).to.eql msg
+          chai.expect(reply).to.eql enableMsg
           done()
 
-      describe 'processing data, trigger via FBP protocol', ->
-        it 'should return flowtrace it over FBP protocol'
+      describe 'process data, trigger via FBP protocol', ->
+        it 'should return flowtrace over FBP protocol', (done) ->
+          @timeout 4*1000
 
+          sendReceiveFbp broker, address, participant.id, testid, enableMsg, (err, reply) ->
+            chai.expect(err).to.not.exist
+            processData broker, address, options.name, testid, (err) ->
+              chai.expect(err).to.not.exist
+              requestTraceDump broker, address, participant.id, testid, (err, trace) ->
+                chai.expect(err).to.not.exist
+                validateTrace trace
+                return done()
 
 describe 'Tracing', () ->
 
