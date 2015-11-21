@@ -1,5 +1,5 @@
 
-# 0.2.0 - November 21, 2015
+# 0.2.1 - November 21, 2015
 
 * Initial support for recording [Flowtrace](https://github.com/flowbased/flowtrace)s
 
@@ -15,7 +15,7 @@
 
 * Add support for New Relic Insights metrics for executed jobs. Event: `MsgfloJobCompleted`
 
-# 0.1.0 - June 23
+# 0.1.0 - June 23, 2015
 
 * Can expose a NoFlo graph as a MsgFlo participant
 * Support for AMQP / RabbitMQ transport
