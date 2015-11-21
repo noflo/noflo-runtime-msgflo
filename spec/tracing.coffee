@@ -100,6 +100,9 @@ transportTests = (address) ->
           broker.sendTo 'inqueue', fbpQueue.IN, msg, (err) ->
             chai.expect(err).to.not.exist
 
+    describe 'enabling tracing using FBP message', ->
+      it 'should respond with ack'
+
 describe 'Tracing', () ->
 
     transportTests 'amqp://localhost'
