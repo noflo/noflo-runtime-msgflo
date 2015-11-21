@@ -34,29 +34,30 @@ processData = (broker, address, role, testid, callback) ->
     broker.sendTo 'inqueue', "#{role}.IN", { repeat: role }, (err) ->
       return done err, data if err
 
-requestTraceDump = (broker, address, participantId, testid, callback) ->
+sendReceiveFbp = (broker, address, participantId, testid, msg, callback) ->
   # TODO: have these queues declared in the discovery message. Don't rely on convention
   fbpQueues =
     IN: ".fbp.#{participantId}.receive"
-    OUT: ".fbp.#{participantId}.send" 
+    OUT: ".fbp.#{participantId}.send"
+  # FIXME: don't use Spy/Participant here. Instead runtime.SendReceivePair ?
+  spy = new msgflo.utils.spy address, 'protocolspy-'+testid, { 'reply': fbpQueues.OUT }
+  spy.startSpying (err) ->
+    return callback err if err
+
+    spy.getMessages 'reply', 1, (messages) ->
+      data = messages[0]
+      return callback null, data
+    broker.sendTo 'inqueue', fbpQueues.IN, msg, (err) ->
+      return callback err if err
+
+requestTraceDump = (broker, address, participantId, testid, callback) ->
   msg =
     protocol: 'trace'
     command: 'dump'
     payload:
       graph: 'default'
       type: 'flowtrace.json'
-  onTraceReceived = (data) ->
-    return callback null, data
-
-  # Maybe don't use spy participant here, just regular
-  spy = new msgflo.utils.spy address, 'protocolspy-'+testid, { 'reply': fbpQueues.OUT }
-  spy.startSpying (err) ->
-    return callback err if err
-
-    spy.getMessages 'reply', 1, (messages) ->
-      onTraceReceived messages[0]
-    broker.sendTo 'inqueue', fbpQueues.IN, msg, (err) ->
-      return callback err if err
+  sendReceiveFbp broker, address, participantId, testid, msg, callback
 
 validateTrace = (data) ->
 
@@ -94,7 +95,7 @@ transportTests = (address) ->
       options =
         broker: address
         graph: 'RepeatTest'
-        name: '3anyone-'+testid
+        name: 'tracetrue-'+testid
         trace: true # enable tracing
       m = new mount.Mounter options
       waitStarted broker, options.name, (err, p) ->
@@ -118,9 +119,46 @@ transportTests = (address) ->
             return done()
 
   describe '--trace=false', ->
-    describe 'enable trace, process data, trigger via FBP protocol', ->
-      it 'enabling should respond with ack'
-      it 'should return flowtrace it over FBP protocol'
+    m = null
+    options = null
+    participant = null
+    testid = ''
+
+    beforeEach (done) ->
+      @timeout 6*1000
+      testid = randomstring.generate 4
+      options =
+        broker: address
+        graph: 'RepeatTest'
+        name: 'tracefalse-'+testid
+        trace: true # enable tracing
+      m = new mount.Mounter options
+      waitStarted broker, options.name, (err, p) ->
+        return done err if err
+        participant = p
+        return done err
+      m.start (err) ->
+        return done err if err
+
+    afterEach (done) ->
+      m.stop done
+
+    describe 'enabling tracing over FBP protocol', () ->
+      it 'should respond with ack', (done) ->
+        msg =
+          protocol: 'trace'
+          command: 'start'
+          payload:
+            graph: 'default'
+            type: 'flowtrace.json'
+        sendReceiveFbp broker, address, participant.id, testid, msg, (err, reply) ->
+          chai.expect(err).to.not.exist
+          chai.expect(reply).to.eql msg
+          done()
+
+      describe 'processing data, trigger via FBP protocol', ->
+        it 'should return flowtrace it over FBP protocol'
+
 
 describe 'Tracing', () ->
 
