@@ -14,6 +14,7 @@ parse = (args) ->
     .option('--deadletter <in1,in2>', 'Set up deadlettering queues for the named inport', String, '')
     .option('--attr key.subkey=value', 'Additional attributes', addOption, [])
     .option('--trace [true]', 'Enable tracing with Flowtrace', Boolean, false)
+    .option('--ignore-exceptions [false]', 'Do not exit process when caught exceptions', Boolean, false)
     .parse args
 
   delete program.options # not clone()able
@@ -29,7 +30,7 @@ main = ->
     console.log "Stack trace: #{error.stack}" if error.stack
     m.tracer.dumpFile null, (err, fname) ->
       console.log 'Wrote flowtrace to:', fname
-      process.exit(2)
+      process.exit(2) if not options.ignoreExceptions
 
   process.on 'SIGUSR2', () =>
     return console.log 'ERROR: Tracing not enabled' if not options.trace
