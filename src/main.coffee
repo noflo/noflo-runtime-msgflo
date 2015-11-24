@@ -25,8 +25,11 @@ main = ->
 
   process.on 'uncaughtException', (error) =>
     return console.log 'ERROR: Tracing not enabled' if not options.trace
+    console.log "ERROR: Caught exception #{error.message}" if error.message
+    console.log "Stack trace: #{error.stack}" if error.stack
     m.tracer.dumpFile null, (err, fname) ->
       console.log 'Wrote flowtrace to:', fname
+      process.exit(2)
 
   process.on 'SIGUSR2', () =>
     return console.log 'ERROR: Tracing not enabled' if not options.trace
