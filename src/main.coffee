@@ -49,7 +49,7 @@ main = ->
 
   m.start (err, def) ->
     throw err if err
-    console.log 'noflo-runtime-msgflo started:', "#{def.name}(#{def.graph})"
+    console.log 'noflo-runtime-msgflo started:', "#{def.name}(#{def.graph})", process.pid
 
 exports.parse = parse
 exports.main = main
