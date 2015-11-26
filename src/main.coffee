@@ -1,5 +1,6 @@
 program = require 'commander'
 mount = require '../src/mount'
+debug = require('debug')('noflo-runtime-msgflo:main')
 
 addOption = (val, list) ->
   list.push val
@@ -24,20 +25,24 @@ main = ->
   m = new mount.Mounter options
 
   process.on 'uncaughtException', (error) =>
-    return console.log 'ERROR: Tracing not enabled' if not options.trace
+    debug 'uncaught exception', options.trace
     console.log "ERROR: Caught exception #{error.message}" if error.message
     console.log "Stack trace: #{error.stack}" if error.stack
+
+    if not options.trace
+      process.exit 2
     m.tracer.dumpFile null, (err, fname) ->
       console.log 'Wrote flowtrace to:', fname
-      process.exit(2)
+      process.exit 2
 
   process.on 'SIGUSR2', () =>
-    return console.log 'ERROR: Tracing not enabled' if not options.trace
+    debug 'SIGUSR2', options.trace
+    return console.log 'SIGUSR2 caught, but tracing not enabled' if not options.trace
     m.tracer.dumpFile null, (err, fname) ->
       console.log 'Wrote flowtrace to:', fname
 
   process.on 'SIGTERM', () =>
-    console.log 'Got SIGTERM, attempting graceful shutdown'
+    debug 'Got SIGTERM, attempting graceful shutdown'
     m.stop (err) ->
       throw err if err # just to get error + stack
       process.exit 0
