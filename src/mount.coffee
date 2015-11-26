@@ -226,11 +226,15 @@ class Mounter
     @instance.shutdown()
     @instance = null
     debug 'stopped component'
-    return callback null if not @client
-    @client.disconnect (err) =>
-      debug 'disconnected client', err
-      @client = null
-      return callback err
+    return callback null if not @coordinator
+    @coordinator.destroy (err) =>
+      debug 'coordinator connection destroyed', err
+      @coordinator = null
+      return callback null if not @client
+      @client.disconnect (err) =>
+        debug 'disconnected client', err
+        @client = null
+        return callback err
 
   setupQueuesForComponent: (instance, definition, callback) ->
     setupQueues @client, definition, (err) =>
