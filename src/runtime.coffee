@@ -26,9 +26,13 @@ class SendReceivePair
         return @client.subscribeToQueue @receiveName, receiveHandler, callback
       
   destroy: (callback) ->
-    # TODO: actually tear down queues
     this.onReceive = () ->
-    return callback null
+    @client.removeQueue 'outqueue', @sendName, (sendErr) =>
+      @client.removeQueue 'inqueue', @receiveName, (recvErr) =>
+        # if we have two errors, we report the first
+        err = sendErr
+        err = recvErr if not err
+        return callback err
 
   send: (data, callback) ->
     if not callback
