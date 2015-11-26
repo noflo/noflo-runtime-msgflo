@@ -36,6 +36,12 @@ main = ->
     m.tracer.dumpFile null, (err, fname) ->
       console.log 'Wrote flowtrace to:', fname
 
+  process.on 'SIGTERM', () =>
+    console.log 'Got SIGTERM, attempting graceful shutdown'
+    m.stop (err) ->
+      throw err if err # just to get error + stack
+      process.exit 0
+
   m.start (err, def) ->
     throw err if err
     console.log 'noflo-runtime-msgflo started:', "#{def.name}(#{def.graph})"
