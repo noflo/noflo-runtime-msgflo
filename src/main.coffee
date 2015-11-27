@@ -15,6 +15,7 @@ parse = (args) ->
     .option('--deadletter <in1,in2>', 'Set up deadlettering queues for the named inport', String, '')
     .option('--attr key.subkey=value', 'Additional attributes', addOption, [])
     .option('--trace [true]', 'Enable tracing with Flowtrace', Boolean, false)
+    .option('--cache [true]', 'Enable NoFlo component cache', Boolean, false)
     .parse args
 
   delete program.options # not clone()able
