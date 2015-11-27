@@ -190,7 +190,7 @@ class Mounter
   constructor: (options) ->
     @options = normalizeOptions options
     @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
-    @loader = new noflo.ComponentLoader @options.basedir
+    @loader = new noflo.ComponentLoader @options.basedir, { cache: @options.cache }
     @instance = null # noflo.Component instance
     @transactions = new newrelic.Transactions @options.name
     @tracer = new trace.Tracer {}
