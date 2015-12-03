@@ -104,7 +104,7 @@ loadAndStartGraph = (loader, graphName, callback) ->
   loader.load graphName, (err, instance) ->
     return callback err if err
     onReady = () ->
-      if instance.network
+      if instance.isSubgraph() and instance.network
         instance.network.on 'process-error', (err) ->
           console.log err.id, err.error?.message, err.error?.stack
         instance.start()
