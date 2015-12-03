@@ -32,7 +32,7 @@ processData = (broker, address, role, testid, callback) ->
       return callback err
 #            spy.stop done
     broker.sendTo 'inqueue', "#{role}.IN", { repeat: role }, (err) ->
-      return done err, data if err
+      return done err if err
 
 sendReceiveFbp = (broker, address, participantId, testid, msg, callback) ->
   # TODO: have these queues declared in the discovery message. Don't rely on convention
@@ -114,7 +114,7 @@ transportTests = (address) ->
 
     describe 'process data, trigger via FBP protocol', ->
       it 'should return flowtrace over FBP protocol', (done) ->
-        @timeout 4*1000
+        @timeout 6*1000
         processData broker, address, options.name, testid, (err) ->
           chai.expect(err).to.not.exist
           requestTraceDump broker, address, participant.id, testid, (err, trace) ->
