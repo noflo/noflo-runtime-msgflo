@@ -17,24 +17,24 @@
     }
   ],
   "dependencies": {
-    "async": "1.4.2",
-    "coffee-script": "1.10.0",
-    "commander": "2.8.1",
-    "debug": "2.2.0",
-    "fbp": "1.1.4",
+    "async": "~1.4.2",
+    "coffee-script": "~1.10.0",
+    "commander": "~2.8.1",
+    "debug": "~2.2.0",
+    "fbp": "~1.1.4",
     "msgflo": "~0.5.18",
-    "newrelic": "1.22.1",
+    "newrelic": "~1.22.1",
     "noflo": "~0.5.15",
-    "noflo-runtime-base": "^0.6.3",
-    "uuid": "^2.0.1"
+    "noflo-runtime-base": "~0.6.3",
+    "uuid": "~2.0.1"
   },
   "devDependencies": {
-    "chai": "3.3.0",
-    "grunt": "0.4.5",
-    "mocha": "2.3.3",
+    "chai": "^3.3.0",
+    "grunt": "^0.4.5",
+    "mocha": "^2.3.3",
     "noflo-core": "^0.1.14",
-    "noflo-objects": "0.1.12",
-    "randomstring": "1.1.0"
+    "noflo-objects": "^0.1.12",
+    "randomstring": "^1.1.0"
   },
   "bin": {
     "noflo-runtime-msgflo": "./bin/noflo-runtime-msgflo"
