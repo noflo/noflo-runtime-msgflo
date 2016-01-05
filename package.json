@@ -22,7 +22,7 @@
     "commander": "~2.8.1",
     "debug": "~2.2.0",
     "fbp": "~1.1.4",
-    "msgflo": "~0.5.18",
+    "msgflo": "~0.5.20",
     "newrelic": "~1.22.1",
     "noflo": "~0.5.15",
     "noflo-runtime-base": "~0.6.3",
