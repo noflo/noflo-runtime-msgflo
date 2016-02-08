@@ -7,7 +7,7 @@ catch e
   debug 'New Relic integration disabled', e.toString()
 
 class Transactions
-  constructor: (@name) ->
+  constructor: (@definition) ->
     @transactions = {}
 
   open: (id, port) ->
@@ -25,7 +25,8 @@ class Transactions
       debug 'Transaction.close', id
       duration = Date.now()-transaction.start
       event =
-        role: @name
+        role: @definition.role
+        component: @definition.component
         inport: transaction.inport
         outport: port
         duration: duration

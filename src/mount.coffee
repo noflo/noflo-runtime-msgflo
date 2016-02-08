@@ -198,9 +198,9 @@ class Mounter
     @options = normalizeOptions options
     @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
     @loader = new noflo.ComponentLoader @options.basedir, { cache: @options.cache }
-    @instance = null # noflo.Component instance
-    @transactions = new newrelic.Transactions @options.name
     @tracer = new trace.Tracer {}
+    @instance = null # noflo.Component instance
+    @transactions = null # loaded with instance
     @coordinator = null
 
   start: (callback) ->
@@ -214,6 +214,7 @@ class Mounter
         @tracer.attach instance.network if @options.trace
 
         definition = @getDefinition instance
+        @transactions = new newrelic.Transactions definition
         @coordinator = new runtime.SendReceivePair @client, ".fbp.#{definition.id}"
         @coordinator.onReceive = (data) =>
           @handleFbpMessage data
