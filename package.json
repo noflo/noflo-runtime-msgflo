@@ -29,9 +29,9 @@
     "uuid": "~2.0.1"
   },
   "devDependencies": {
-    "chai": "^3.3.0",
+    "chai": "^3.5.0",
     "grunt": "^0.4.5",
-    "mocha": "^2.3.3",
+    "mocha": "^2.4.3",
     "noflo-core": "^0.1.14",
     "noflo-objects": "^0.1.12",
     "randomstring": "^1.1.0"
