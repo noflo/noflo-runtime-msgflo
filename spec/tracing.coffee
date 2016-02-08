@@ -75,7 +75,11 @@ validateTrace = (data) ->
   chai.expect(trace).to.have.keys ['header', 'events']
   chai.expect(trace.events).to.be.an 'array'
   events = trace.events.map (e) -> "#{e.command}"
-  chai.expect(events).to.eql ['connect', 'data', 'disconnect']
+  eventTypes = []
+  for e in events
+    eventTypes.push e if eventTypes.indexOf(e) == -1
+  eventTypes = eventTypes.sort()
+  chai.expect(eventTypes).to.eql (['connect', 'data', 'disconnect', 'begingroup', 'endgroup']).sort()
 
 transportTests = (address) ->
   broker = null
