@@ -285,6 +285,17 @@ describe 'Mount', ->
           options = mount.normalizeOptions input
           chai.expect(options.baz).to.equal 'value-with=in-it'
 
+      describe '--attr inports.myport.hidden=true', ->
+        it 'should set myport to be hidden', ->
+          input =
+            inports:
+              myport:
+                description: 'some port'
+            attr: [ 'inports.myport.hidden=true' ]
+          options = mount.normalizeOptions input
+          isHidden = if options.inports.myport.hidden then true else false
+          chai.expect(isHidden).to.eql true
+
       describe 'multiple --attr', ->
         it 'should set each of the key,value pairs', ->
           input =
