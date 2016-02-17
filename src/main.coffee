@@ -13,6 +13,7 @@ parse = (args) ->
     .option('--prefetch <number>', 'How many concurrent jobs / prefetching', Number, 1)
     .option('--name <name[*]>', 'Name of client. Wildcards replaced with random string', String, 'noflo-runtime-msgflo-*')
     .option('--deadletter <in1,in2>', 'Set up deadlettering queues for the named inport', String, '')
+    .option('--iips <JSON>', 'Initial information packets (IIP) to send to ports', String, '{}')
     .option('--attr key.subkey=value', 'Additional attributes', addOption, [])
     .option('--trace [true]', 'Enable tracing with Flowtrace', Boolean, false)
     .option('--cache [true]', 'Enable NoFlo component cache', Boolean, false)

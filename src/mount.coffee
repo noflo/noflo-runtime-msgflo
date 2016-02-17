@@ -100,7 +100,15 @@ setupDeadLettering = (client, inports, deadletters, callback) ->
 
   async.map deadletters, setupDeadletter, callback
 
-loadAndStartGraph = (loader, graphName, callback) ->
+sendIIPs = (instance, iips) ->
+  for port, data of iips
+    socket = noflo.internalSocket.createSocket()
+    instance.inPorts[port].attach socket
+    socket.connect()
+    socket.send data
+    socket.disconnect()
+
+loadAndStartGraph = (loader, graphName, iips, callback) ->
   loader.load graphName, (err, instance) ->
     return callback err if err
     onReady = () ->
@@ -112,6 +120,7 @@ loadAndStartGraph = (loader, graphName, callback) ->
             throw err.error
           , 0
         instance.start()
+      sendIIPs instance, iips
       return callback null, instance
     if instance.isReady()
       onReady()
@@ -180,9 +189,12 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
   options.outports = {} if not options.outports
   options.basedir = process.cwd() if not options.basedir
   options.prefetch = 1 if not options.prefetch
+  options.iips = '{}' if not options.iips
 
   options.broker = process.env['MSGFLO_BROKER'] if not options.broker
   options.broker = process.env['CLOUDAMQP_URL'] if not options.broker
+
+  options.iips = JSON.parse options.iips
 
   if options.attr and options.attr.length
     for option in options.attr
@@ -207,7 +219,7 @@ class Mounter
     debug 'starting'
     @client.connect (err) =>
       return callback err if err
-      loadAndStartGraph @loader, @options.graph, (err, instance) =>
+      loadAndStartGraph @loader, @options.graph, @options.iips, (err, instance) =>
         return callback err if err
         debug 'started graph', @options.graph
         @instance = instance
