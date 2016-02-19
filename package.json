@@ -45,7 +45,8 @@
   },
   "noflo": {
     "graphs": {
-      "RepeatTest": "spec/fixtures/repeat.fbp"
+      "RepeatTest": "spec/fixtures/repeat.fbp",
+      "IIPKickTest": "spec/fixtures/kickiip.fbp"
     }
   }
 }

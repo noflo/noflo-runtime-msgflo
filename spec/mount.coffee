@@ -195,7 +195,7 @@ transportTest = (address) ->
             client.sendTo 'inqueue', inPort.queue, inputCausingError, (err) ->
               chai.expect(err).to.not.exist
 
-  describe 'IIPs specified on commandline', ->
+  describe 'IIPs specified on commandline with component', ->
     m = null
     options = null
     beforeEach (done) ->
@@ -224,6 +224,49 @@ transportTest = (address) ->
         @timeout 2000
         input = [ null ]
         expected = [ 'my iip wins' ]
+        onResult = (msg) ->
+          chai.expect(msg.data).to.eql expected.shift()
+          client.ackMessage msg
+          done() unless expected.length
+        client = msgflo.transport.getClient address
+        client.connect (err) ->
+          chai.expect(err).to.not.exist
+          client.createQueue 'inqueue', options.outports['out'].queue, (err) ->
+            chai.expect(err).to.not.exist
+            client.subscribeToQueue options.outports['out'].queue, onResult, (err) ->
+              chai.expect(err).to.not.exist
+              client.sendTo 'inqueue', options.inports['in'].queue, input, (err) ->
+                chai.expect(err).to.not.exist
+
+  describe 'IIPs on commandline overriding IIP in graph', ->
+    m = null
+    options = null
+    beforeEach (done) ->
+      @timeout 4000
+      id = randomstring.generate 4
+      options =
+        broker: address
+        graph: 'IIPKickTest'
+        name: 'graphiips'+id
+        inports:
+          data:
+            hidden: true
+          in:
+            queue: '_graphiipin_'+id
+        outports:
+          out:
+            queue: '_graphiipout_'+id
+        iips: '{ "data": "msgflo iip wins" }'
+      m = new mount.Mounter options
+      m.start done
+    afterEach (done) ->
+      m.stop done
+
+    describe 'sending bang to Kick', ->
+      it 'should send the IIP out', (done) ->
+        @timeout 2000
+        input = [ null ]
+        expected = [ 'msgflo iip wins' ]
         onResult = (msg) ->
           chai.expect(msg.data).to.eql expected.shift()
           client.ackMessage msg
