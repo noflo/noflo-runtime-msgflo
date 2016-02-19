@@ -120,8 +120,12 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
             throw err.error
           , 0
         instance.start()
-      sendIIPs instance, iips
-      return callback null, instance
+      onStarted = () ->
+        # needs to happen after NoFlo network has sent its IIPs
+        debug 'sending IIPs', Object.keys(iips)
+        sendIIPs instance, iips
+        return callback null, instance
+      setTimeout onStarted, 100 # XXX: hack, remove when https://github.com/noflo/noflo/issues/261 fixed
     if instance.isReady()
       onReady()
     else
