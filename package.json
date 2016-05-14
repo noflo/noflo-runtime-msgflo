@@ -44,6 +44,9 @@
     "test": "mocha --reporter spec --compilers coffee:coffee-script/register spec/*.coffee"
   },
   "noflo": {
+    "components": {
+      "TestDelayOrError": "components/TestDelayOrError.coffee"
+    },
     "graphs": {
       "RepeatTest": "spec/fixtures/repeat.fbp",
       "IIPKickTest": "spec/fixtures/kickiip.fbp"
