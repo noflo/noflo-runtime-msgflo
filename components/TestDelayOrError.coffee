@@ -20,7 +20,7 @@ exports.getComponent = ->
 
   noflo.helpers.WirePattern c,
     in: ['in']
-    out: 'out'
+    out: ['out',  'error']
     params: 'matcherror'
     forwardGroups: true
     async: true
@@ -28,12 +28,14 @@ exports.getComponent = ->
 
     timeout = Math.random()*200
     setTimeout ->
-      console.log 'dd', data
-      if data.indexOf(c.params.matcherror) == -1
-        out.send data
+      isValid = data.indexOf(c.params.matcherror) == -1
+      console.log 'dd', data, isValid
+      if isValid
+        out.out.send data
         do callback
       else
-        callback data
+        out.error.send data
+        callback null
     , timeout
 
   c
