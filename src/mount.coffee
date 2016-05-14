@@ -27,7 +27,7 @@ wrapInport = (transactions, client, instance, port, queueName) ->
     socket.connect()
     socket.beginGroup groupId
     socket.send msg.data
-    socket.endGroup()
+    socket.endGroup groupId
     socket.disconnect()
 
   return if not queueName
