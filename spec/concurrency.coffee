@@ -39,7 +39,7 @@ concurrencyTests = (address) ->
       id = randomstring.generate 4
       options =
         broker: address
-        prefetch: 1
+        prefetch: 8
         graph: 'TestDelayOrError'
         iips: '{ "matcherror": "error" }'
         name: 'concurrent1'+id
