@@ -30,7 +30,7 @@
   },
   "devDependencies": {
     "chai": "^3.5.0",
-    "grunt": "^0.4.5",
+    "grunt": "^1.0.0",
     "mocha": "^2.4.3",
     "noflo-core": "^0.1.14",
     "noflo-objects": "^0.1.12",
