@@ -213,11 +213,11 @@ class Mounter
   constructor: (options) ->
     @options = normalizeOptions options
     @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
+    @runtime = new runtime.Runtime @client
     @loader = new noflo.ComponentLoader @options.basedir, { cache: @options.cache }
     @tracer = new trace.Tracer {}
     @instance = null # noflo.Component instance
     @transactions = null # loaded with instance
-    @coordinator = null
 
   start: (callback) ->
     debug 'starting'
@@ -231,11 +231,12 @@ class Mounter
 
         definition = @getDefinition instance
         @transactions = new newrelic.Transactions definition
-        @coordinator = new runtime.SendReceivePair @client, ".fbp.#{definition.id}"
-        @coordinator.onReceive = (data) =>
-          @handleFbpMessage data
-        @coordinator.create (err) =>
+
+        @runtime.start definition.id, (err) =>
           return callback err if err
+
+          @runtime.connection.onReceive = (data) =>
+            @handleFbpMessage data
 
           @setupQueuesForComponent instance, definition, (err) =>
             return callback err if err
@@ -250,10 +251,10 @@ class Mounter
     @instance.shutdown()
     @instance = null
     debug 'stopped component'
-    return callback null if not @coordinator
-    @coordinator.destroy (err) =>
+    return callback null if not @runtime
+    @runtime.stop (err) =>
       debug 'coordinator connection destroyed', err
-      @coordinator = null
+      @runtime = null
       return callback null if not @client
       @client.disconnect (err) =>
         debug 'disconnected client', err
@@ -287,21 +288,22 @@ class Mounter
     return if protocol != 'trace'
 
     # Handle trace subprotocol
+    connection = @runtime?.connection
     switch command
       when 'start'
         @tracer.attach @instance.network
-        @coordinator?.send data
+        connection?.send data
       when 'stop'
         null # FIXME: implement
-        @coordinator?.send data
+        connection?.send data
       when 'clear'
         null # FIXME: implement
-        @coordinator?.send data
+        connection?.send data
       when 'dump'
         @tracer.dumpString (err, trace) =>
           reply = common.clone data
           reply.payload.flowtrace = trace
-          @coordinator?.send reply
+          connection?.send reply
 
 
 exports.Mounter = Mounter

@@ -51,16 +51,16 @@ class MsgFloRuntime extends Base
     @options = if options then options else {}
 
     # TODO: support capture-stdout and capture-exceptions like noflo-nodejs? or maybe it should move to -base...
-    # FIXME: generate the send/receive names
-    @connection = new SendReceivePair @client
+    @connection = null
+
+  # Lifetime handling
+  start: (id, callback) ->
+    # NOTE: assumes @client is connected already
+    @connection = new SendReceivePair @client, ".fbp.#{id}"
     @connection.onReceive (data) ->
       ctx =
         connection: @connection
       @receive data.protocol, data.command, data.payload, ctx
-
-  # Lifetime handling
-  start: (callback) ->
-    # NOTE: assumes @client is connected already
     @connection.create callback
 
   stop: (callback) ->
