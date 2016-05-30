@@ -1,4 +1,5 @@
 # @runtime noflo-nodejs
+# @name IIPKickTest
 INPORT=one.IN:IN
 INPORT=kick.DATA:DATA
 OUTPORT=kick.OUT:OUT
