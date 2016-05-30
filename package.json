@@ -48,8 +48,8 @@
       "TestDelayOrError": "components/TestDelayOrError.coffee"
     },
     "graphs": {
-      "RepeatTest": "spec/fixtures/repeat.fbp",
-      "IIPKickTest": "spec/fixtures/kickiip.fbp"
+      "RepeatTest": "graphs/repeat.fbp",
+      "IIPKickTest": "graphs/kickiip.fbp"
     }
   }
 }
