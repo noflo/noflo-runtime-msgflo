@@ -1,4 +1,4 @@
-# !runtime noflo
+# @runtime noflo-nodejs
 INPORT=one.IN:IN
 OUTPORT=two.OUT:OUT
 

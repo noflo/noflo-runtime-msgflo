@@ -1,4 +1,4 @@
-# !runtime noflo
+# @runtime noflo-nodejs
 INPORT=one.IN:IN
 INPORT=kick.DATA:DATA
 OUTPORT=kick.OUT:OUT
