@@ -21,9 +21,9 @@ script:
 - npm test
 deploy:
   provider: npm
-  email: jononor@gmail.com
+  email: henri.bergius@iki.fi
   api_key:
-    secure: StmXxkIR+mp8lNbTEAX6mnhXg0o8+iIHhHGJaiLRSdb1swVcp70SpftPVMnbH2Sg5KE37m5M2MSeY7OWqLe0cOHHMnBYK+cKIw9fbUrRAohhHLzWfu5rQtndnCAN2EfIGXNwTQpTKWdnqjT557ZwVr+itWJnSS2E7xswXPhVcQ4=
+    secure: IR3aJOFZKRGup79QkCnNTaYBN/F+W0o7fH15ki09HHdQvSAVsfN241e+9xxn/Ja5M0qW0ZZyHZPSMUWyDaA6Mxw+6uKKfLBys4GXPgpblhk1osL0Fx9FI0yU06tuTYRdsVLhk8Go55dtIwYz6DjLyuhOISJvBy4QjGILvfLwsQ8=
   on:
     tags: true
     repo: noflo/noflo-runtime-msgflo
