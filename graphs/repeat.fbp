@@ -1,4 +1,5 @@
-# !runtime noflo
+# @runtime noflo-nodejs
+# @name RepeatTest
 INPORT=one.IN:IN
 OUTPORT=two.OUT:OUT
 

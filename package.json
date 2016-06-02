@@ -24,15 +24,14 @@
     "fbp": "~1.2.1",
     "msgflo": "~0.5.24",
     "newrelic": "~1.27.2",
-    "noflo": "~0.5.22",
+    "noflo": "~0.7.6",
     "noflo-runtime-base": "~0.7.3",
     "uuid": "~2.0.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
-    "grunt": "^0.4.5",
     "mocha": "^2.4.3",
-    "noflo-core": "^0.2.0",
+    "noflo-core": "^0.3.0",
     "noflo-objects": "^0.1.12",
     "randomstring": "^1.1.0"
   },
@@ -48,8 +47,8 @@
       "TestDelayOrError": "components/TestDelayOrError.coffee"
     },
     "graphs": {
-      "RepeatTest": "spec/fixtures/repeat.fbp",
-      "IIPKickTest": "spec/fixtures/kickiip.fbp"
+      "RepeatTest": "graphs/repeat.fbp",
+      "IIPKickTest": "graphs/kickiip.fbp"
     }
   }
 }
