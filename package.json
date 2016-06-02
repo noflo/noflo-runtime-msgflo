@@ -22,7 +22,7 @@
     "commander": "~2.8.1",
     "debug": "~2.2.0",
     "fbp": "~1.2.1",
-    "msgflo": "~0.5.24",
+    "msgflo-nodejs": "~0.4.13",
     "newrelic": "~1.27.2",
     "noflo": "~0.7.6",
     "noflo-runtime-base": "~0.7.3",
@@ -33,6 +33,7 @@
     "mocha": "^2.4.3",
     "noflo-core": "^0.3.0",
     "noflo-objects": "^0.1.12",
+    "msgflo": "~0.5.24",
     "randomstring": "^1.1.0"
   },
   "bin": {

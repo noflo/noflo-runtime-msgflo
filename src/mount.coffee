@@ -5,7 +5,7 @@ runtime = require './runtime'
 path = require 'path'
 noflo = require 'noflo'
 async = require 'async'
-msgflo = require 'msgflo'
+msgflo = require 'msgflo-nodejs'
 uuid = require 'uuid'
 trace = require('noflo-runtime-base').trace
 
