@@ -1,4 +1,12 @@
 
+# 0.7.0 - June 2, 2016
+
+* Update to NoFlo 0.7.x. This has some breaking changes in non-core parts of the API, see the [NoFlo changelog](https://github.com/noflo/noflo/blob/master/CHANGES.md#070-march-31st-2016).
+
+# 0.2.14 - February 17, 2016
+
+* Add support for specifying IIPs via `--iip '{ "portA": "iipA", ... }'`
+
 # 0.2.1 - November 21, 2015
 
 * Initial support for recording [Flowtrace](https://github.com/flowbased/flowtrace)s
