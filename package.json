@@ -17,12 +17,14 @@
     }
   ],
   "dependencies": {
+    "amqplib": "^0.4.1",
     "async": "~1.5.2",
     "coffee-script": "~1.10.0",
     "commander": "~2.8.1",
     "debug": "~2.2.0",
     "fbp": "~1.2.1",
-    "msgflo-nodejs": "~0.4.13",
+    "mqtt": "~1.4.0",
+    "msgflo-nodejs": "~0.5.1",
     "newrelic": "~1.27.2",
     "noflo": "~0.7.6",
     "noflo-runtime-base": "~0.7.3",
@@ -33,7 +35,7 @@
     "mocha": "^2.4.3",
     "noflo-core": "^0.3.0",
     "noflo-objects": "^0.1.12",
-    "msgflo": "^0.6.0",
+    "msgflo": "^0.7.2",
     "randomstring": "^1.1.0"
   },
   "bin": {
