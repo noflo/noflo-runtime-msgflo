@@ -213,7 +213,8 @@ class Mounter
   constructor: (options) ->
     @options = normalizeOptions options
     @client = msgflo.transport.getClient @options.broker, { prefetch: @options.prefetch }
-    @loader = new noflo.ComponentLoader @options.basedir, { cache: @options.cache }
+    loader = options.loader or new noflo.ComponentLoader @options.basedir, { cache: @options.cache }
+    @loader = loader
     @tracer = new trace.Tracer {}
     @instance = null # noflo.Component instance
     @transactions = null # loaded with instance
