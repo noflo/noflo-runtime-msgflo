@@ -20,6 +20,9 @@ parse = (args) ->
     .parse args
 
   delete program.options # not clone()able
+  delete program._events
+  delete program.Command
+  delete program.Option
   return program
 
 main = ->
