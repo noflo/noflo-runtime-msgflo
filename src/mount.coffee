@@ -157,19 +157,27 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
   loader.load graphName, (err, instance) ->
     return callback err if err
     onReady = () ->
+      onStarted = (err) ->
+        return callback err if err
+        # needs to happen after NoFlo network has sent its IIPs
+        debug 'sending IIPs', Object.keys(iips)
+        sendIIPs instance, iips
+        return callback null, instance
+
       if instance.isSubgraph() and instance.network
+        # Subgraphs need process-error handling
         instance.network.on 'process-error', (err) ->
           console.log err.id, err.error?.message, err.error?.stack
           setTimeout ->
             # Need to not throw syncronously to avoid cascading affects
             throw err.error
           , 0
-        instance.start (err) ->
-          return callback err if err
-          # needs to happen after NoFlo network has sent its IIPs
-          debug 'sending IIPs', Object.keys(iips)
-          sendIIPs instance, iips
-          return callback null, instance
+        # Tell Network to start sending IIPs
+        instance.start onStarted
+        return
+
+      # Components don't have a start callback, we can just go started immediately
+      do onStarted
     if instance.isReady()
       onReady()
     else
