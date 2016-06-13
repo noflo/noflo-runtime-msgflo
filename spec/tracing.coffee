@@ -79,7 +79,13 @@ validateTrace = (data) ->
   for e in events
     eventTypes.push e if eventTypes.indexOf(e) == -1
   eventTypes = eventTypes.sort()
-  chai.expect(eventTypes).to.eql (['connect', 'data', 'disconnect', 'begingroup', 'endgroup']).sort()
+  chai.expect(eventTypes, 'should have received all NoFlo packet event types').to.eql ([
+    'connect'
+    'data'
+    'disconnect'
+    'begingroup'
+    'endgroup'
+  ]).sort()
 
 transportTests = (address) ->
   broker = null
