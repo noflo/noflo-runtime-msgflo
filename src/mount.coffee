@@ -107,10 +107,7 @@ wrapPortsDedicated = (transactions, client, loader, instances, definition, optio
 
     onMessage = (msg) ->
       loadAndStartGraph loader, options.graph, options.iips, (err, instance) ->
-        if err
-          console.error err
-          client.nackMessage msg, false, false
-          return
+        throw err if err
         debug 'wrapPortsDedicated network started'
         instances.push instance
 
