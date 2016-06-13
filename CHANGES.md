@@ -1,3 +1,7 @@
+# 0.8.0 - June 13, 2016
+
+* Support `--dedicated-network` option, creates a new NoFlo.Network instance for each message.
+This makes it easier to have concurrency safety, but means networks cannot share state at all.
 
 # 0.7.0 - June 2, 2016
 
