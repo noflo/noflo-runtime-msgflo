@@ -113,9 +113,11 @@ wrapPortsDedicated = (transactions, client, loader, instances, definition, optio
 
         for outPort in definition.outports
           wrapOutport transactions, client, instance, outPort.id, outPort.queue, (result) ->
-            debug 'wrapPortsDedicated network shutdown'
-            instance.shutdown()
-            instances.splice instances.indexOf(instance), 1
+            setTimeout ->
+              debug 'wrapPortsDedicated network shutdown'
+              instance.shutdown()
+              instances.splice instances.indexOf(instance), 1
+            , 1
 
         wrappedIn = wrapInport transactions, instance, port.id
         wrappedIn msg
