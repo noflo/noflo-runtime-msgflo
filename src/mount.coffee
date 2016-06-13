@@ -176,6 +176,7 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
         instance.start()
 
       # Components don't have a start callback, we can just go started immediately
+      # FIXME: Doing this on instance.network.start callback caused issues with Flowtrace
       setTimeout ->
         do onStarted
       , 100
