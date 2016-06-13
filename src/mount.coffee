@@ -236,6 +236,7 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
   options.basedir = process.cwd() if not options.basedir
   options.prefetch = 1 if not options.prefetch
   options.iips = '{}' if not options.iips
+  options.dedicated_network = false unless options.dedicated_network
 
   options.broker = process.env['MSGFLO_BROKER'] if not options.broker
   options.broker = process.env['CLOUDAMQP_URL'] if not options.broker
