@@ -302,7 +302,7 @@ describe 'Mount', ->
         newOptions = extendOptions options,
           graph: 'core/RepeatAsync'
           name: '1someone'+randomstring.generate 4
-        m = new mount.Mounter options
+        m = new mount.Mounter newOptions
         m.stop done
 
     describe "options", ->
