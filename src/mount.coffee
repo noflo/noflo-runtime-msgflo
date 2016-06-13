@@ -261,7 +261,7 @@ class Mounter
             return callback err if err
 
             # Connect queues to instance
-            wrapPortsOnExisting transactions, client, instance, definition
+            wrapPortsOnExisting @transactions, @client, instance, definition
 
             # Send discovery package to broker on 'fbp' queue
             @sendParticipant definition, (err) =>
