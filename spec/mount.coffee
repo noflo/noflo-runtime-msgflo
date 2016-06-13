@@ -7,10 +7,14 @@ randomstring = require 'randomstring'
 mount = require('..').mount
 
 # Note: most require running an external broker service
-transports =
+variants =
 #  'direct': 'direct://broker1'
-  'MQTT': 'mqtt://localhost'
-  'AMQP': 'amqp://localhost'
+  'MQTT_single':
+    broker: 'mqtt://localhost'
+    dedicated_network: false
+  'AMQP_single':
+    broker: 'amqp://localhost'
+    dedicated_network: false
 
 objectValues = (o) ->
   Object.keys(o).map (k) -> o[k]
@@ -283,9 +287,9 @@ transportTest = (address) ->
 
 describe 'Mount', ->
   Object.keys(transports).forEach (type) =>
-    address = transports[type]
+    address = transports[type].broker
 
-    describe ", transport=#{type}: ", () ->
+    describe ", variant=#{type}: ", () ->
       transportTest address
 
     describe 'attempting stop without start', () ->
