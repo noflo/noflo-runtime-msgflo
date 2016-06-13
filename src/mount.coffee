@@ -241,6 +241,12 @@ class Mounter
           @setupQueuesForComponent instance, definition, (err) =>
             return callback err if err
 
+            # Connect queues to instance
+            for port in definition.inports
+              wrapInport @transactions, @client, instance, port.id, port.queue
+            for port in definition.outports
+              wrapOutport @transactions, @client, instance, port.id, port.queue
+
             # Send discovery package to broker on 'fbp' queue
             @sendParticipant definition, (err) =>
               return callback err, @options
@@ -266,11 +272,6 @@ class Mounter
     setupQueues @client, definition, (err) =>
       debug 'queues set up', err
       return callback err if err
-
-      for port in definition.inports
-        wrapInport @transactions, @client, instance, port.id, port.queue
-      for port in definition.outports
-        wrapOutport @transactions, @client, instance, port.id, port.queue
 
       setupDeadLettering @client, definition.inports, @options.deadletter, (err) =>
         return callback err if err
