@@ -12,8 +12,9 @@ trace = require('noflo-runtime-base').trace
 debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
 
-wrapInport = (transactions, client, instance, port, queueName) ->
-  debug 'wrapInport', port, queueName
+wrapInport = (transactions, client, instance, port) ->
+  debug 'wrapInport', port
+
   socket = noflo.internalSocket.createSocket()
   instance.inPorts[port].attach socket
 
@@ -30,11 +31,9 @@ wrapInport = (transactions, client, instance, port, queueName) ->
     socket.endGroup groupId
     socket.disconnect()
 
-  return if not queueName
-  client.subscribeToQueue queueName, onMessage, (err) ->
-    throw err if err
+  return onMessage
 
-wrapOutport = (transactions, client, instance, port, queueName) ->
+wrapOutport = (transactions, client, instance, port, queueName, callback) ->
   debug 'wrapOutport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.outPorts[port].attach socket
@@ -57,11 +56,18 @@ wrapOutport = (transactions, client, instance, port, queueName) ->
         fields:
           deliveryTag: group
       data: null
+
+    result =
+      id: group
+
     if port is 'error'
       client.nackMessage msg, false, false
+      result.type = 'error'
     else
       client.ackMessage msg
+      result.type = 'ok'
     transactions.close group, port
+    callback null, result
 
   socket.on 'disconnect', ->
     debug 'onDisconnect', port, groups
@@ -242,10 +248,7 @@ class Mounter
             return callback err if err
 
             # Connect queues to instance
-            for port in definition.inports
-              wrapInport @transactions, @client, instance, port.id, port.queue
-            for port in definition.outports
-              wrapOutport @transactions, @client, instance, port.id, port.queue
+            @setupPorts instance, definition
 
             # Send discovery package to broker on 'fbp' queue
             @sendParticipant definition, (err) =>
@@ -276,6 +279,21 @@ class Mounter
       setupDeadLettering @client, definition.inports, @options.deadletter, (err) =>
         return callback err if err
         return callback null
+
+  setupPorts: (instance, definition) ->
+    definition.inPorts.forEach (port) =>
+      return unless port.queue
+      return unless port.id
+
+      # Normal mode is to reuse same network for each message
+      onMessage = wrapInport @transactions, @client, instance, port.id
+      client.subscribeToQueue queueName, onMessage, (err) ->
+        throw err if err
+
+    for port in definition.portports
+      wrapOutport @transactions, @client, instance, port.id, port.queue, (err, result) ->
+        throw err if err
+        debug 'outPort result', result.id, result.type
 
   getDefinition: () ->
     return null if not @instances.length
