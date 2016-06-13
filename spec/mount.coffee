@@ -12,9 +12,15 @@ variants =
   'MQTT_single':
     broker: 'mqtt://localhost'
     dedicated_network: false
+  'MQTT_dedicated':
+    broker: 'mqtt://localhost'
+    dedicated_network: true
   'AMQP_single':
     broker: 'amqp://localhost'
     dedicated_network: false
+  'AMQP_dedicated':
+    broker: 'amqp://localhost'
+    dedicated_network: true
 
 objectValues = (o) ->
   Object.keys(o).map (k) -> o[k]

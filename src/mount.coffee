@@ -67,7 +67,7 @@ wrapOutport = (transactions, client, instance, port, queueName, callback) ->
       client.ackMessage msg
       result.type = 'ok'
     transactions.close group, port
-    callback null, result
+    callback result
 
   socket.on 'disconnect', ->
     debug 'onDisconnect', port, groups
@@ -84,6 +84,7 @@ wrapOutport = (transactions, client, instance, port, queueName, callback) ->
     client.sendTo 'outqueue', queueName, data, (err) ->
       debug 'sent output data', queueName, err, data
 
+# Execute all packets using the existing NoFlo network
 wrapPortsOnExisting = (transactions, client, instance, definition) ->
   for port in definition.inports
     continue unless port.queue
@@ -96,6 +97,28 @@ wrapPortsOnExisting = (transactions, client, instance, definition) ->
 
   for port in definition.outports
     wrapOutport transactions, client, instance, port.id, port.queue, ->
+
+# Execute each packet using a dedicated NoFlo network
+wrapPortsDedicated = (transactions, client, loader, definition, options) ->
+  definition.inports.forEach (port) ->
+    return unless port.queue
+    return unless port.id
+
+    onMessage = (msg) ->
+      loadAndStartGraph loader, options.graph, options.iips, (err, instance) ->
+        if err
+          console.error err
+          client.nackMessage msg, false, false
+          return
+        debug 'wrapPortsDedicated network started'
+
+        for port in definition.outports
+          wrapOutport transactions, client, instance, port.id, port.queue, (result) ->
+            debug 'wrapPortsDedicated network shutdown'
+            instance.shutdown()
+
+        wrappedIn = wrapInport transactions, instance, port
+        wrappedIn msg
 
 setupQueues = (client, def, callback) ->
   setupIn = (port, cb) ->
@@ -261,7 +284,10 @@ class Mounter
             return callback err if err
 
             # Connect queues to instance
-            wrapPortsOnExisting @transactions, @client, instance, definition
+            if options.dedicated_network
+              wrapPortsDedicated @transactions, @client, @loader, definition, @options
+            else
+              wrapPortsOnExisting @transactions, @client, instance, definition
 
             # Send discovery package to broker on 'fbp' queue
             @sendParticipant definition, (err) =>
