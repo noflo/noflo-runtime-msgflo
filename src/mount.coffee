@@ -13,7 +13,7 @@ debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
 
 wrapInport = (transactions, instance, port) ->
-  debug 'wrapInport', port
+  debug 'wrapInport', port, Object.keys instance.inPorts
 
   socket = noflo.internalSocket.createSocket()
   instance.inPorts[port].attach socket
