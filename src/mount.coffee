@@ -13,7 +13,7 @@ debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
 
 wrapInport = (transactions, instance, port) ->
-  debug 'wrapInport', port, Object.keys instance.inPorts
+  debug 'wrapInport', port, Object.keys instance.inPorts?.ports
 
   socket = noflo.internalSocket.createSocket()
   instance.inPorts[port].attach socket
@@ -112,8 +112,8 @@ wrapPortsDedicated = (transactions, client, loader, definition, options) ->
           return
         debug 'wrapPortsDedicated network started'
 
-        for port in definition.outports
-          wrapOutport transactions, client, instance, port.id, port.queue, (result) ->
+        for outPort in definition.outports
+          wrapOutport transactions, client, instance, outPort.id, outPort.queue, (result) ->
             debug 'wrapPortsDedicated network shutdown'
             instance.shutdown()
 
