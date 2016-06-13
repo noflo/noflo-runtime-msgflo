@@ -281,7 +281,7 @@ class Mounter
         return callback null
 
   setupPorts: (instance, definition) ->
-    definition.inPorts.forEach (port) =>
+    definition.inports.forEach (port) =>
       return unless port.queue
       return unless port.id
 
@@ -290,7 +290,7 @@ class Mounter
       client.subscribeToQueue queueName, onMessage, (err) ->
         throw err if err
 
-    for port in definition.portports
+    for port in definition.outports
       wrapOutport @transactions, @client, instance, port.id, port.queue, (err, result) ->
         throw err if err
         debug 'outPort result', result.id, result.type
