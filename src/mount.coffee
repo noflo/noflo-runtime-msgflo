@@ -164,13 +164,12 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
             # Need to not throw syncronously to avoid cascading affects
             throw err.error
           , 0
-        instance.start()
-      onStarted = () ->
-        # needs to happen after NoFlo network has sent its IIPs
-        debug 'sending IIPs', Object.keys(iips)
-        sendIIPs instance, iips
-        return callback null, instance
-      setTimeout onStarted, 100 # XXX: hack, remove when https://github.com/noflo/noflo/issues/261 fixed
+        instance.start (err) ->
+          return callback err if err
+          # needs to happen after NoFlo network has sent its IIPs
+          debug 'sending IIPs', Object.keys(iips)
+          sendIIPs instance, iips
+          return callback null, instance
     if instance.isReady()
       onReady()
     else
