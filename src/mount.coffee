@@ -287,7 +287,7 @@ class Mounter
 
       # Normal mode is to reuse same network for each message
       onMessage = wrapInport @transactions, instance, port.id
-      client.subscribeToQueue queueName, onMessage, (err) ->
+      @client.subscribeToQueue queueName, onMessage, (err) ->
         throw err if err
 
     for port in definition.outports
