@@ -84,6 +84,19 @@ wrapOutport = (transactions, client, instance, port, queueName, callback) ->
     client.sendTo 'outqueue', queueName, data, (err) ->
       debug 'sent output data', queueName, err, data
 
+wrapPortsOnExisting = (transactions, client, instance, definition) ->
+  for port in definition.inports
+    continue unless port.queue
+    continue unless port.id
+
+    # Normal mode is to reuse same network for each message
+    onMessage = wrapInport transactions, instance, port.id
+    client.subscribeToQueue port.queue, onMessage, (err) ->
+      throw err if err
+
+  for port in definition.outports
+    wrapOutport transactions, client, instance, port.id, port.queue, ->
+
 setupQueues = (client, def, callback) ->
   setupIn = (port, cb) ->
     client.createQueue 'inqueue', port.queue, cb
@@ -248,7 +261,7 @@ class Mounter
             return callback err if err
 
             # Connect queues to instance
-            @setupPorts instance, definition
+            wrapPortsOnExisting transactions, client, instance, definition
 
             # Send discovery package to broker on 'fbp' queue
             @sendParticipant definition, (err) =>
@@ -279,21 +292,6 @@ class Mounter
       setupDeadLettering @client, definition.inports, @options.deadletter, (err) =>
         return callback err if err
         return callback null
-
-  setupPorts: (instance, definition) ->
-    definition.inports.forEach (port) =>
-      return unless port.queue
-      return unless port.id
-
-      # Normal mode is to reuse same network for each message
-      onMessage = wrapInport @transactions, instance, port.id
-      @client.subscribeToQueue queueName, onMessage, (err) ->
-        throw err if err
-
-    for port in definition.outports
-      wrapOutport @transactions, @client, instance, port.id, port.queue, (err, result) ->
-        throw err if err
-        debug 'outPort result', result.id, result.type
 
   getDefinition: () ->
     return null if not @instances.length
