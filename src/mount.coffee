@@ -177,7 +177,9 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
         return
 
       # Components don't have a start callback, we can just go started immediately
-      do onStarted
+      setTimeout ->
+        do onStarted
+      , 100
     if instance.isReady()
       onReady()
     else
