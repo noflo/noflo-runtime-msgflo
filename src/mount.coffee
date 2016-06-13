@@ -120,6 +120,9 @@ wrapPortsDedicated = (transactions, client, loader, definition, options) ->
         wrappedIn = wrapInport transactions, instance, port
         wrappedIn msg
 
+    client.subscribeToQueue port.queue, onMessage, (err) ->
+      throw err if err
+
 setupQueues = (client, def, callback) ->
   setupIn = (port, cb) ->
     client.createQueue 'inqueue', port.queue, cb
