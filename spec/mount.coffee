@@ -11,16 +11,16 @@ variants =
 #  'direct': 'direct://broker1'
   'MQTT_single':
     broker: 'mqtt://localhost'
-    dedicated_network: false
+    dedicatedNetwork: false
   'MQTT_dedicated':
     broker: 'mqtt://localhost'
-    dedicated_network: true
+    dedicatedNetwork: true
   'AMQP_single':
     broker: 'amqp://localhost'
-    dedicated_network: false
+    dedicatedNetwork: false
   'AMQP_dedicated':
     broker: 'amqp://localhost'
-    dedicated_network: true
+    dedicatedNetwork: true
 
 objectValues = (o) ->
   Object.keys(o).map (k) -> o[k]

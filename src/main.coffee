@@ -17,7 +17,7 @@ parse = (args) ->
     .option('--attr key.subkey=value', 'Additional attributes', addOption, [])
     .option('--trace [true]', 'Enable tracing with Flowtrace', Boolean, false)
     .option('--cache [true]', 'Enable NoFlo component cache', Boolean, false)
-    .option('--dedicated_network [true]', 'Create a dedicated NoFlo network for each packet', Boolean, false)
+    .option('--dedicated-network [true]', 'Create a dedicated NoFlo network for each packet', Boolean, false)
     .parse args
 
   delete program.options # not clone()able
