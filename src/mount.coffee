@@ -284,7 +284,7 @@ class Mounter
             return callback err if err
 
             # Connect queues to instance
-            if options.dedicated_network
+            if @options.dedicated_network
               wrapPortsDedicated @transactions, @client, @loader, definition, @options
             else
               wrapPortsOnExisting @transactions, @client, instance, definition
