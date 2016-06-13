@@ -11,6 +11,12 @@
     "url": "git://github.com/noflo/noflo-runtime-msgflo.git"
   },
   "license": "MIT",
+  "keywords": [
+    "noflo",
+    "msgflo",
+    "mqtt",
+    "amqp"
+  ],
   "dependencies": {
     "amqplib": "^0.4.1",
     "async": "~1.5.2",
