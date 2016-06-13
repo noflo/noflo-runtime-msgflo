@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git://github.com/noflo/noflo-runtime-msgflo.git"
   },
-  "licenses": "MIT",
+  "license": "MIT",
   "dependencies": {
     "amqplib": "^0.4.1",
     "async": "~1.5.2",
