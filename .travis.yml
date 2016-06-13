@@ -17,6 +17,8 @@ install:
 before_script:
 - mosquitto -d
 - npm install -g grunt-cli
+env:
+  matrix: DEBUG="noflo-runtime-msgflo:mount"
 script:
 - npm test
 deploy:
