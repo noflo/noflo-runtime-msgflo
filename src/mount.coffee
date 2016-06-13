@@ -59,6 +59,7 @@ wrapOutport = (transactions, client, instance, port, queueName, callback) ->
 
     result =
       id: group
+      type: null
 
     if port is 'error'
       client.nackMessage msg, false, false
