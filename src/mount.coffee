@@ -286,8 +286,10 @@ class Mounter
 
             # Connect queues to instance
             if @options.dedicated_network
+              debug 'setup in dedicated network mode'
               wrapPortsDedicated @transactions, @client, @loader, definition, @options
             else
+              debug 'setup in single network mode'
               wrapPortsOnExisting @transactions, @client, instance, definition
 
             # Send discovery package to broker on 'fbp' queue
