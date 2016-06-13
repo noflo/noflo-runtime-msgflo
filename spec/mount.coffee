@@ -7,10 +7,20 @@ randomstring = require 'randomstring'
 mount = require('..').mount
 
 # Note: most require running an external broker service
-transports =
+variants =
 #  'direct': 'direct://broker1'
-  'MQTT': 'mqtt://localhost'
-  'AMQP': 'amqp://localhost'
+  'MQTT_single':
+    broker: 'mqtt://localhost'
+    dedicatedNetwork: false
+  'MQTT_dedicated':
+    broker: 'mqtt://localhost'
+    dedicatedNetwork: true
+  'AMQP_single':
+    broker: 'amqp://localhost'
+    dedicatedNetwork: false
+  'AMQP_dedicated':
+    broker: 'amqp://localhost'
+    dedicatedNetwork: true
 
 objectValues = (o) ->
   Object.keys(o).map (k) -> o[k]
@@ -30,11 +40,16 @@ onParticipantAdded = (coordinator, name, callback) ->
   matches = objectValues(coordinator.participants).filter participantMatches
   onAdded matches[0] if matches.length
 
-transportTest = (address) ->
+extendOptions = (options, props = {}) ->
+  newOptions = JSON.parse JSON.stringify options
+  newOptions[key] = val for key, val of props
+  newOptions
+
+transportTest = (originalOptions) ->
   coordinator = null
 
   beforeEach (done) ->
-    broker = msgflo.transport.getBroker address
+    broker = msgflo.transport.getBroker originalOptions.broker
     coordinator = new msgflo.coordinator.Coordinator broker
     coordinator.start (err) ->
       chai.expect(err).to.be.a 'null'
@@ -50,8 +65,7 @@ transportTest = (address) ->
     options = null
     beforeEach (done) ->
       @timeout 4000
-      options =
-        broker: address
+      options = extendOptions originalOptions,
         graph: 'core/RepeatAsync'
         name: '1someone'+randomstring.generate 4
       m = new mount.Mounter options
@@ -82,8 +96,7 @@ transportTest = (address) ->
     beforeEach (done) ->
       @timeout 4000
       id = randomstring.generate 4
-      options =
-        broker: address
+      options = extendOptions originalOptions,
         graph: 'core/Repeat'
         name: 'customqueue'+id
         inports:
@@ -103,7 +116,7 @@ transportTest = (address) ->
         onResult = (msg) ->
           chai.expect(msg.data).to.eql input
           done()
-        client = msgflo.transport.getClient address
+        client = msgflo.transport.getClient options.broker
         client.connect (err) ->
           chai.expect(err).to.not.exist
           client.createQueue 'inqueue', options.outports['out'].queue, (err) ->
@@ -119,8 +132,7 @@ transportTest = (address) ->
     beforeEach (done) ->
       @timeout 4000
       id = randomstring.generate 4
-      options =
-        broker: address
+      options = extendOptions originalOptions,
         graph: 'objects/SplitArray'
         name: 'customqueue'+id
         inports:
@@ -143,7 +155,7 @@ transportTest = (address) ->
           chai.expect(msg.data).to.eql expected.shift()
           client.ackMessage msg
           done() unless expected.length
-        client = msgflo.transport.getClient address
+        client = msgflo.transport.getClient options.broker
         client.connect (err) ->
           chai.expect(err).to.not.exist
           client.createQueue 'inqueue', options.outports['out'].queue, (err) ->
@@ -159,8 +171,7 @@ transportTest = (address) ->
     beforeEach (done) ->
       @timeout 4000
       id = randomstring.generate 4
-      options =
-        broker: address
+      options = extendOptions originalOptions,
         graph: 'core/ReadEnv'
         name: 'deadlettering'+id
         inports:
@@ -179,7 +190,7 @@ transportTest = (address) ->
 
     describe 'input message causing error', ->
       it 'should be sent to deadletter queue', (done) ->
-        return @skip() if address.substr(0, 4) is 'mqtt'
+        return @skip() if options.broker.substr(0, 4) is 'mqtt'
         @timeout 4000
         inputCausingError = '__non_exitsting_envvar___'
         onDeadletter = (msg) ->
@@ -187,7 +198,7 @@ transportTest = (address) ->
           done()
         inPort = m.getDefinition().inports.filter((p) -> p.id == 'key')[0]
         deadletter = 'dead-'+inPort.queue
-        client = msgflo.transport.getClient address
+        client = msgflo.transport.getClient options.broker
         client.connect (err) ->
           chai.expect(err).to.not.exist
           client.subscribeToQueue deadletter, onDeadletter, (err) ->
@@ -201,8 +212,7 @@ transportTest = (address) ->
     beforeEach (done) ->
       @timeout 4000
       id = randomstring.generate 4
-      options =
-        broker: address
+      options = extendOptions originalOptions,
         graph: 'core/Kick'
         name: 'iips'+id
         inports:
@@ -228,7 +238,7 @@ transportTest = (address) ->
           chai.expect(msg.data).to.eql expected.shift()
           client.ackMessage msg
           done() unless expected.length
-        client = msgflo.transport.getClient address
+        client = msgflo.transport.getClient options.broker
         client.connect (err) ->
           chai.expect(err).to.not.exist
           client.createQueue 'inqueue', options.outports['out'].queue, (err) ->
@@ -244,8 +254,7 @@ transportTest = (address) ->
     beforeEach (done) ->
       @timeout 4000
       id = randomstring.generate 4
-      options =
-        broker: address
+      options = extendOptions originalOptions,
         graph: 'IIPKickTest'
         name: 'graphiips'+id
         inports:
@@ -271,7 +280,7 @@ transportTest = (address) ->
           chai.expect(msg.data).to.eql expected.shift()
           client.ackMessage msg
           done() unless expected.length
-        client = msgflo.transport.getClient address
+        client = msgflo.transport.getClient options.broker
         client.connect (err) ->
           chai.expect(err).to.not.exist
           client.createQueue 'inqueue', options.outports['out'].queue, (err) ->
@@ -282,19 +291,18 @@ transportTest = (address) ->
                 chai.expect(err).to.not.exist
 
 describe 'Mount', ->
-  Object.keys(transports).forEach (type) =>
-    address = transports[type]
+  Object.keys(variants).forEach (type) =>
+    options = variants[type]
 
-    describe ", transport=#{type}: ", () ->
-      transportTest address
+    describe ", variant=#{type}: ", () ->
+      transportTest options
 
     describe 'attempting stop without start', () ->
       it 'should return sucess without doing anything', (done) ->
-        options =
-          broker: address
+        newOptions = extendOptions options,
           graph: 'core/RepeatAsync'
           name: '1someone'+randomstring.generate 4
-        m = new mount.Mounter options
+        m = new mount.Mounter newOptions
         m.stop done
 
     describe "options", ->

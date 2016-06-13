@@ -12,8 +12,9 @@ trace = require('noflo-runtime-base').trace
 debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
 
-wrapInport = (transactions, client, instance, port, queueName) ->
-  debug 'wrapInport', port, queueName
+wrapInport = (transactions, instance, port) ->
+  debug 'wrapInport', port, Object.keys instance.inPorts?.ports
+
   socket = noflo.internalSocket.createSocket()
   instance.inPorts[port].attach socket
 
@@ -30,11 +31,9 @@ wrapInport = (transactions, client, instance, port, queueName) ->
     socket.endGroup groupId
     socket.disconnect()
 
-  return if not queueName
-  client.subscribeToQueue queueName, onMessage, (err) ->
-    throw err if err
+  return onMessage
 
-wrapOutport = (transactions, client, instance, port, queueName) ->
+wrapOutport = (transactions, client, instance, port, queueName, callback) ->
   debug 'wrapOutport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.outPorts[port].attach socket
@@ -57,11 +56,19 @@ wrapOutport = (transactions, client, instance, port, queueName) ->
         fields:
           deliveryTag: group
       data: null
+
+    result =
+      id: group
+      type: null
+
     if port is 'error'
       client.nackMessage msg, false, false
+      result.type = 'error'
     else
       client.ackMessage msg
+      result.type = 'ok'
     transactions.close group, port
+    callback result
 
   socket.on 'disconnect', ->
     debug 'onDisconnect', port, groups
@@ -77,6 +84,44 @@ wrapOutport = (transactions, client, instance, port, queueName) ->
     return if not queueName # hidden
     client.sendTo 'outqueue', queueName, data, (err) ->
       debug 'sent output data', queueName, err, data
+
+# Execute all packets using the existing NoFlo network
+wrapPortsOnExisting = (transactions, client, instance, definition) ->
+  for port in definition.inports
+    continue unless port.queue
+    continue unless port.id
+
+    # Normal mode is to reuse same network for each message
+    onMessage = wrapInport transactions, instance, port.id
+    client.subscribeToQueue port.queue, onMessage, (err) ->
+      throw err if err
+
+  for port in definition.outports
+    wrapOutport transactions, client, instance, port.id, port.queue, ->
+
+# Execute each packet using a dedicated NoFlo network
+wrapPortsDedicated = (transactions, client, loader, instances, definition, options) ->
+  definition.inports.forEach (port) ->
+    return unless port.queue
+    return unless port.id
+
+    onMessage = (msg) ->
+      loadAndStartGraph loader, options.graph, options.iips, (err, instance) ->
+        throw err if err
+        debug 'wrapPortsDedicated network started'
+        instances.push instance
+
+        for outPort in definition.outports
+          wrapOutport transactions, client, instance, outPort.id, outPort.queue, (result) ->
+            debug 'wrapPortsDedicated network shutdown'
+            instance.shutdown()
+            instances.splice instances.indexOf(instance), 1
+
+        wrappedIn = wrapInport transactions, instance, port.id
+        wrappedIn msg
+
+    client.subscribeToQueue port.queue, onMessage, (err) ->
+      throw err if err
 
 setupQueues = (client, def, callback) ->
   setupIn = (port, cb) ->
@@ -112,20 +157,29 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
   loader.load graphName, (err, instance) ->
     return callback err if err
     onReady = () ->
+      onStarted = (err) ->
+        return callback err if err
+        # needs to happen after NoFlo network has sent its IIPs
+        debug 'sending IIPs', Object.keys(iips)
+        sendIIPs instance, iips
+        return callback null, instance
+
       if instance.isSubgraph() and instance.network
+        # Subgraphs need process-error handling
         instance.network.on 'process-error', (err) ->
           console.log err.id, err.error?.message, err.error?.stack
           setTimeout ->
             # Need to not throw syncronously to avoid cascading affects
             throw err.error
           , 0
+        # Tell Network to start sending IIPs
         instance.start()
-      onStarted = () ->
-        # needs to happen after NoFlo network has sent its IIPs
-        debug 'sending IIPs', Object.keys(iips)
-        sendIIPs instance, iips
-        return callback null, instance
-      setTimeout onStarted, 100 # XXX: hack, remove when https://github.com/noflo/noflo/issues/261 fixed
+
+      # Components don't have a start callback, we can just go started immediately
+      # FIXME: Doing this on instance.network.start callback caused issues with Flowtrace
+      setTimeout ->
+        do onStarted
+      , 100
     if instance.isReady()
       onReady()
     else
@@ -194,6 +248,7 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
   options.basedir = process.cwd() if not options.basedir
   options.prefetch = 1 if not options.prefetch
   options.iips = '{}' if not options.iips
+  options.dedicatedNetwork = false unless options.dedicatedNetwork
 
   options.broker = process.env['MSGFLO_BROKER'] if not options.broker
   options.broker = process.env['CLOUDAMQP_URL'] if not options.broker
@@ -216,7 +271,7 @@ class Mounter
     loader = options.loader or new noflo.ComponentLoader @options.basedir, { cache: @options.cache }
     @loader = loader
     @tracer = new trace.Tracer {}
-    @instance = null # noflo.Component instance
+    @instances = [] # noflo.Component instances
     @transactions = null # loaded with instance
     @coordinator = null
 
@@ -227,7 +282,7 @@ class Mounter
       loadAndStartGraph @loader, @options.graph, @options.iips, (err, instance) =>
         return callback err if err
         debug 'started graph', @options.graph
-        @instance = instance
+        @instances.push instance
         @tracer.attach instance.network if @options.trace
 
         definition = @getDefinition instance
@@ -241,16 +296,25 @@ class Mounter
           @setupQueuesForComponent instance, definition, (err) =>
             return callback err if err
 
+            # Connect queues to instance
+            if @options.dedicatedNetwork
+              debug 'setup in dedicated network mode'
+              wrapPortsDedicated @transactions, @client, @loader, @instances, definition, @options
+            else
+              debug 'setup in single network mode'
+              wrapPortsOnExisting @transactions, @client, instance, definition
+
             # Send discovery package to broker on 'fbp' queue
             @sendParticipant definition, (err) =>
               return callback err, @options
 
   stop: (callback) ->
-    return callback null if not @instance
-    debug 'stopping'
-    @instance.shutdown()
-    @instance = null
-    debug 'stopped component'
+    return callback null if not @instances.length
+    debug "stopping #{@instances.length} instances"
+    while @instances.length
+      instance = @instances.shift()
+      instance.shutdown()
+    debug 'stopped component instances'
     return callback null if not @coordinator
     @coordinator.destroy (err) =>
       debug 'coordinator connection destroyed', err
@@ -266,18 +330,13 @@ class Mounter
       debug 'queues set up', err
       return callback err if err
 
-      for port in definition.inports
-        wrapInport @transactions, @client, instance, port.id, port.queue
-      for port in definition.outports
-        wrapOutport @transactions, @client, instance, port.id, port.queue
-
       setupDeadLettering @client, definition.inports, @options.deadletter, (err) =>
         return callback err if err
         return callback null
 
   getDefinition: () ->
-    return null if not @instance
-    return getDefinition @instance, @options
+    return null if not @instances.length
+    return getDefinition @instances[0], @options
 
   sendParticipant: (definition, callback) ->
     debug 'sendParticipant', definition.id
@@ -290,10 +349,12 @@ class Mounter
     # Handle trace subprotocol
     switch command
       when 'start'
-        @tracer.attach @instance.network
+        for instance in @instances
+          @tracer.attach instance.network
         @coordinator?.send data
       when 'stop'
-        null # FIXME: implement
+        for instance in @instances
+          @tracer.detach instance.network
         @coordinator?.send data
       when 'clear'
         null # FIXME: implement
@@ -304,6 +365,4 @@ class Mounter
           reply.payload.flowtrace = trace
           @coordinator?.send reply
 
-
 exports.Mounter = Mounter
-
