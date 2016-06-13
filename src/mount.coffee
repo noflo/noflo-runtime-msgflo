@@ -12,7 +12,7 @@ trace = require('noflo-runtime-base').trace
 debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
 
-wrapInport = (transactions, client, instance, port) ->
+wrapInport = (transactions, instance, port) ->
   debug 'wrapInport', port
 
   socket = noflo.internalSocket.createSocket()
@@ -286,7 +286,7 @@ class Mounter
       return unless port.id
 
       # Normal mode is to reuse same network for each message
-      onMessage = wrapInport @transactions, @client, instance, port.id
+      onMessage = wrapInport @transactions, instance, port.id
       client.subscribeToQueue queueName, onMessage, (err) ->
         throw err if err
 
