@@ -264,7 +264,7 @@ class Mounter
     @coordinator = null
 
   start: (callback) ->
-    debug 'starting'
+    debug 'starting', @options
     @client.connect (err) =>
       return callback err if err
       loadAndStartGraph @loader, @options.graph, @options.iips, (err, instance) =>
