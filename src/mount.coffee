@@ -99,7 +99,7 @@ wrapPortsOnExisting = (transactions, client, instance, definition) ->
     wrapOutport transactions, client, instance, port.id, port.queue, ->
 
 # Execute each packet using a dedicated NoFlo network
-wrapPortsDedicated = (transactions, client, loader, definition, options) ->
+wrapPortsDedicated = (transactions, client, loader, instances, definition, options) ->
   definition.inports.forEach (port) ->
     return unless port.queue
     return unless port.id
@@ -111,11 +111,13 @@ wrapPortsDedicated = (transactions, client, loader, definition, options) ->
           client.nackMessage msg, false, false
           return
         debug 'wrapPortsDedicated network started'
+        instances.push instance
 
         for outPort in definition.outports
           wrapOutport transactions, client, instance, outPort.id, outPort.queue, (result) ->
             debug 'wrapPortsDedicated network shutdown'
             instance.shutdown()
+            instances.splice instances.indexOf(instance), 1
 
         wrappedIn = wrapInport transactions, instance, port.id
         wrappedIn msg
@@ -299,7 +301,7 @@ class Mounter
             # Connect queues to instance
             if @options.dedicatedNetwork
               debug 'setup in dedicated network mode'
-              wrapPortsDedicated @transactions, @client, @loader, definition, @options
+              wrapPortsDedicated @transactions, @client, @loader, @instances, definition, @options
             else
               debug 'setup in single network mode'
               wrapPortsOnExisting @transactions, @client, instance, definition
@@ -349,10 +351,12 @@ class Mounter
     # Handle trace subprotocol
     switch command
       when 'start'
-        @tracer.attach @instances[0].network
+        for instance in @instances
+          @tracer.attach instance.network
         @coordinator?.send data
       when 'stop'
-        null # FIXME: implement
+        for instance in @instances
+          @tracer.detach instance.network
         @coordinator?.send data
       when 'clear'
         null # FIXME: implement
