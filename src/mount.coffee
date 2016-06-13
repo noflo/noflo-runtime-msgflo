@@ -216,7 +216,7 @@ class Mounter
     loader = options.loader or new noflo.ComponentLoader @options.basedir, { cache: @options.cache }
     @loader = loader
     @tracer = new trace.Tracer {}
-    @instance = null # noflo.Component instance
+    @instances = [] # noflo.Component instances
     @transactions = null # loaded with instance
     @coordinator = null
 
@@ -227,7 +227,7 @@ class Mounter
       loadAndStartGraph @loader, @options.graph, @options.iips, (err, instance) =>
         return callback err if err
         debug 'started graph', @options.graph
-        @instance = instance
+        @instances.push instance
         @tracer.attach instance.network if @options.trace
 
         definition = @getDefinition instance
@@ -246,11 +246,12 @@ class Mounter
               return callback err, @options
 
   stop: (callback) ->
-    return callback null if not @instance
-    debug 'stopping'
-    @instance.shutdown()
-    @instance = null
-    debug 'stopped component'
+    return callback null if not @instances.length
+    debug "stopping #{@instances.length} instances"
+    while @instances.length
+      instance = @instances.shift()
+      instance.shutdown()
+    debug 'stopped component instances'
     return callback null if not @coordinator
     @coordinator.destroy (err) =>
       debug 'coordinator connection destroyed', err
@@ -276,8 +277,8 @@ class Mounter
         return callback null
 
   getDefinition: () ->
-    return null if not @instance
-    return getDefinition @instance, @options
+    return null if not @instances.length
+    return getDefinition @instances[0], @options
 
   sendParticipant: (definition, callback) ->
     debug 'sendParticipant', definition.id
@@ -290,7 +291,7 @@ class Mounter
     # Handle trace subprotocol
     switch command
       when 'start'
-        @tracer.attach @instance.network
+        @tracer.attach @instances[0].network
         @coordinator?.send data
       when 'stop'
         null # FIXME: implement
@@ -304,6 +305,4 @@ class Mounter
           reply.payload.flowtrace = trace
           @coordinator?.send reply
 
-
 exports.Mounter = Mounter
-
