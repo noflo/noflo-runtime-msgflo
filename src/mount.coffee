@@ -117,7 +117,7 @@ wrapPortsDedicated = (transactions, client, loader, definition, options) ->
             debug 'wrapPortsDedicated network shutdown'
             instance.shutdown()
 
-        wrappedIn = wrapInport transactions, instance, port
+        wrappedIn = wrapInport transactions, instance, port.id
         wrappedIn msg
 
     client.subscribeToQueue port.queue, onMessage, (err) ->
