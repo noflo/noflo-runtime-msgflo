@@ -173,7 +173,7 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
             throw err.error
           , 0
         # Tell Network to start sending IIPs
-        instance.start onStarted
+        instance.network.start onStarted
         return
 
       # Components don't have a start callback, we can just go started immediately
