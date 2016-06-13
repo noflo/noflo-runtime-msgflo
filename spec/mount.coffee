@@ -286,18 +286,16 @@ transportTest = (address) ->
                 chai.expect(err).to.not.exist
 
 describe 'Mount', ->
-  Object.keys(transports).forEach (type) =>
-    address = transports[type].broker
+  Object.keys(variants).forEach (type) =>
+    options = variants[type]
 
     describe ", variant=#{type}: ", () ->
-      transportTest address
+      transportTest options.broker
 
     describe 'attempting stop without start', () ->
       it 'should return sucess without doing anything', (done) ->
-        options =
-          broker: address
-          graph: 'core/RepeatAsync'
-          name: '1someone'+randomstring.generate 4
+        options.graph = 'core/RepeatAsync'
+        options.name = '1someone'+randomstring.generate 4
         m = new mount.Mounter options
         m.stop done
 
