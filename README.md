@@ -32,6 +32,14 @@ Altenatively one can use the embedding API, see [src/mount.coffee](./src/mount.c
     rt.start (err, rt) ->
       # started
 
+With NoFlo 0.7.0, component discovery and caching 
+[changed](https://github.com/noflo/noflo/blob/master/CHANGES.md#070-march-31st-2016) 
+to use [FBP manifest](https://github.com/flowbased/fbp-manifest).
+To cache some graph components, first install `noflo` and run
+`noflo-cache-preheat` to create the FBP manifest file `fbp.json`. Then run the
+graph passing the cache parameter:
+
+    noflo-runtime-msgflo --name myworker --graph project/WorkerGraph --broker amqp://foo.cloudamqp.com/bar --cache true
 
 ## Debugging
 
