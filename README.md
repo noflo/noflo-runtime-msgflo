@@ -39,7 +39,7 @@ To cache some graph components, first install `noflo` and run
 `noflo-cache-preheat` to create the FBP manifest file `fbp.json`. Then run the
 graph passing the cache parameter:
 
-    noflo-runtime-msgflo --name myworker --graph project/WorkerGraph --broker amqp://foo.cloudamqp.com/bar --cache true
+    noflo-runtime-msgflo --cache true --name myworker --graph project/WorkerGraph --broker amqp://foo.cloudamqp.com/bar
 
 ## Debugging
 
