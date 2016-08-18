@@ -32,7 +32,6 @@ Altenatively one can use the embedding API, see [src/mount.coffee](./src/mount.c
     rt.start (err, rt) ->
       # started
 
-
 ## Debugging
 
 noflo-runtime-msgflo supports [flowtrace](https://github.com/flowbased/flowtrace) allows to trace & store the execution of the NoFlo network,
@@ -67,6 +66,17 @@ For instance, you can get a human readable log using `flowtrace-show`
     -> IN repeat DISC
     -> IN stdout DISC
 
+Optimizing startup time
+----
+
+Since NoFlo 0.7 [FBP manifest](https://github.com/flowbased/fbp-manifest) 
+is used, making it possible to cache components which turns process startup
+faster due to less disk IO.
+To cache graph's components, first install `noflo` and run
+`noflo-cache-preheat` to create the FBP manifest file `fbp.json`. Then run the
+graph passing the cache parameter:
+
+    noflo-runtime-msgflo --cache true --name myworker --graph project/WorkerGraph --broker amqp://foo.cloudamqp.com/bar
 
 TODO
 -----
