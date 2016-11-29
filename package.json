@@ -35,7 +35,7 @@
     "chai": "^3.5.0",
     "mocha": "^3.1.0",
     "noflo-core": "^0.3.0",
-    "noflo-objects": "^0.1.12",
+    "noflo-objects": "^0.2.0",
     "msgflo": "^0.9.1",
     "randomstring": "^1.1.0"
   },
