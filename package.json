@@ -36,7 +36,7 @@
     "mocha": "^3.1.0",
     "noflo-core": "^0.3.0",
     "noflo-objects": "^0.2.0",
-    "msgflo": "^0.9.1",
+    "msgflo": "^0.10.0",
     "randomstring": "^1.1.0"
   },
   "bin": {
