@@ -76,6 +76,7 @@ class MsgFloRuntime extends Base
       payload: payload
     conn.send m, (err) ->
       # ignored
+    super protocol, topic, payload, context
 
   sendAll: (protocol, topic, payload) ->
     # XXX: do we need to handle multiple connections (multiple coordinators?)
