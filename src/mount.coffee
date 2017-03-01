@@ -115,7 +115,7 @@ wrapPortsDedicated = (transactions, client, loader, instances, definition, optio
           wrapOutport transactions, client, instance, outPort.id, outPort.queue, (result) ->
             setTimeout ->
               debug 'wrapPortsDedicated network shutdown'
-              instance.shutdown()
+              instance.shutdown ->
               instances.splice instances.indexOf(instance), 1
             , 1
 
@@ -174,14 +174,8 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
             # Need to not throw syncronously to avoid cascading affects
             throw err.error
           , 0
-        # Tell Network to start sending IIPs
-        instance.start()
-
-      # Components don't have a start callback, we can just go started immediately
-      # FIXME: Doing this on instance.network.start callback caused issues with Flowtrace
-      setTimeout ->
-        do onStarted
-      , 100
+      # Tell Network to start sending IIPs
+      instance.start onStarted
     if instance.isReady()
       onReady()
     else
@@ -315,7 +309,7 @@ class Mounter
     debug "stopping #{@instances.length} instances"
     while @instances.length
       instance = @instances.shift()
-      instance.shutdown()
+      instance.shutdown ->
     debug 'stopped component instances'
     return callback null if not @coordinator
     @coordinator.destroy (err) =>
