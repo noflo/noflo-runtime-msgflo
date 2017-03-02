@@ -115,8 +115,9 @@ wrapPortsDedicated = (transactions, client, loader, instances, definition, optio
           wrapOutport transactions, client, instance, outPort.id, outPort.queue, (result) ->
             setTimeout ->
               debug 'wrapPortsDedicated network shutdown'
-              instance.shutdown ->
-              instances.splice instances.indexOf(instance), 1
+              instance.shutdown (err) ->
+                throw err if err
+                instances.splice instances.indexOf(instance), 1
             , 1
 
         wrappedIn = wrapInport transactions, instance, port.id
@@ -307,19 +308,20 @@ class Mounter
   stop: (callback) ->
     return callback null if not @instances.length
     debug "stopping #{@instances.length} instances"
-    while @instances.length
-      instance = @instances.shift()
-      instance.shutdown ->
-    debug 'stopped component instances'
-    return callback null if not @coordinator
-    @coordinator.destroy (err) =>
-      debug 'coordinator connection destroyed', err
-      @coordinator = null
-      return callback null if not @client
-      @client.disconnect (err) =>
-        debug 'disconnected client', err
-        @client = null
-        return callback err
+    async.each @instances, (instance, callback) ->
+      instance.shutdown callback
+    , (err) =>
+      @instances = []
+      debug 'stopped component instances', err
+      return callback err if not @coordinator
+      @coordinator.destroy (err) =>
+        debug 'coordinator connection destroyed', err
+        @coordinator = null
+        return callback null if not @client
+        @client.disconnect (err) =>
+          debug 'disconnected client', err
+          @client = null
+          return callback err
 
   setupQueuesForComponent: (instance, definition, callback) ->
     setupQueues @client, definition, (err) =>
