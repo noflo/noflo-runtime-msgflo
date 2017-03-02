@@ -308,8 +308,8 @@ class Mounter
   stop: (callback) ->
     return callback null if not @instances.length
     debug "stopping #{@instances.length} instances"
-    async.each @instances, (instance, callback) ->
-      instance.shutdown callback
+    async.each @instances, (instance, done) ->
+      instance.shutdown done
     , (err) =>
       @instances = []
       debug 'stopped component instances', err
