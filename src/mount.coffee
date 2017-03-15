@@ -252,8 +252,11 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
   options.iips = '{}' if not options.iips
   options.dedicatedNetwork = false unless options.dedicatedNetwork
 
+  options.discoveryInterval = process.env['MSGFLO_DISCOVERY_PERIOD'] unless options.discoveryInterval
   options.broker = process.env['MSGFLO_BROKER'] if not options.broker
   options.broker = process.env['CLOUDAMQP_URL'] if not options.broker
+
+  options.discoveryInterval = 60 unless options.discoveryInterval
 
   options.iips = JSON.parse options.iips
 
@@ -276,6 +279,7 @@ class Mounter
     @instances = [] # noflo.Component instances
     @transactions = null # loaded with instance
     @coordinator = null
+    @discoveryInterval = null
 
   start: (callback) ->
     debug 'starting'
@@ -306,12 +310,18 @@ class Mounter
               debug 'setup in single network mode'
               wrapPortsOnExisting @transactions, @client, instance, definition
 
-            # Send discovery package to broker on 'fbp' queue
+            # Send discovery package, first once
             @sendParticipant definition, (err) =>
+              # then periodically
+              @discoveryInterval = setInterval () =>
+                @sendParticipant definition, (err) ->
+                  console.log 'WARNING: Failed to send Msgflo discovery', err
+              , @options.discoveryInterval*1000/2.2
               return callback err, @options
 
   stop: (callback) ->
     return callback null if not @instances.length
+    clearInterval @discoveryInterval
     debug "stopping #{@instances.length} instances"
     while @instances.length
       instance = @instances.shift()
