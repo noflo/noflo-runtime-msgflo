@@ -315,7 +315,7 @@ class Mounter
               # then periodically
               @discoveryInterval = setInterval () =>
                 @sendParticipant definition, (err) ->
-                  console.log 'WARNING: Failed to send Msgflo discovery', err
+                  console.log 'WARNING: Failed to send Msgflo discovery', err if err
               , @options.discoveryInterval*1000/2.2
               return callback err, @options
 
