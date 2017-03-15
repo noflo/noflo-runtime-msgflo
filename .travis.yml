@@ -18,7 +18,6 @@ before_install:
 - cmake . -DCMAKE_INSTALL_PREFIX=../mosquitto
 - make install
 - cd ..
-- ls -la mosquitto/*
 before_script:
 - ./mosquitto/sbin/mosquitto -d
 - npm install -g grunt-cli
