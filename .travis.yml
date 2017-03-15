@@ -3,17 +3,24 @@ services:
 - rabbitmq
 node_js:
 - '4.2'
+sudo: false
+addons:
+  apt:
+    packages:
+    - pkg-config
+    - cmake
+    - openssl
+    - libc-ares-dev
 before_install:
-- sudo apt-get update -qq
-- sudo apt-get install pkg-config cmake openssl libc-ares-dev
 - wget http://mosquitto.org/files/source/mosquitto-1.3.1.tar.gz
 - tar xzf mosquitto-1.3.1.tar.gz
 - cd mosquitto-1.3.1
-- cmake .
-- sudo make install
+- cmake . -DCMAKE_INSTALL_PREFIX=../mosquitto
+- make install
 - cd ..
+- ls -la mosquitto/*
 before_script:
-- mosquitto -d
+- ./mosquitto/bin/mosquitto -d
 - npm install -g grunt-cli
 deploy:
   provider: npm
