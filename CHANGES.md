@@ -1,3 +1,10 @@
+# 0.11.0 - March 15, 2017
+
+Breaking changes
+
+* Updated `noflo` to 0.8.x. This release breaks compatibility with 0.7.x.
+See the [release announcement](http://bergie.iki.fi/blog/noflo-0-8/).
+
 # 0.10.0 - March 15, 2017
 
 * MsgFlo discovery messages are now sent periodically, not just on startup
