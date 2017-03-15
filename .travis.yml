@@ -20,7 +20,7 @@ before_install:
 - cd ..
 - ls -la mosquitto/*
 before_script:
-- ./mosquitto/bin/mosquitto -d
+- ./mosquitto/sbin/mosquitto -d
 - npm install -g grunt-cli
 deploy:
   provider: npm
