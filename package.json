@@ -26,7 +26,7 @@
     "fbp": "~1.5.0",
     "mqtt": "~2.2.0",
     "msgflo-nodejs": "~0.10.1",
-    "newrelic": "~1.36.0",
+    "newrelic": "^1.39.0",
     "noflo": "~0.8.3",
     "noflo-runtime-base": "~0.8.2",
     "uuid": "~3.0.1"
