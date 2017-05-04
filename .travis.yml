@@ -22,6 +22,8 @@ before_install:
 before_script:
 - ./mosquitto/sbin/mosquitto -d
 - npm install -g grunt-cli
+after_script:
+- killall mosquitto
 deploy:
   provider: npm
   email: henri.bergius@iki.fi
