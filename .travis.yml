@@ -4,6 +4,7 @@ services:
 node_js:
 - '4.2'
 sudo: false
+dist: trusty
 addons:
   apt:
     packages:
