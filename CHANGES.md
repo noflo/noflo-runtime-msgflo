@@ -1,3 +1,7 @@
+# 0.11.3 - May 5, 2017
+
+* Discovery messages sent to MsgFlo now contain NoFlo component icon and description
+
 # 0.11.0 - March 15, 2017
 
 Breaking changes
