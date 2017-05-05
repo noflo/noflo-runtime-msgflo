@@ -185,8 +185,8 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
 getDefinition = (instance, options) ->
   definition =
     component: options.graph
-    icon: 'file-word-o' # FIXME: implement
-    label: 'No description' # FIXME: implement
+    icon: instance.getIcon()
+    label: instance.getDescription()
     inports: []
     outports: []
 
