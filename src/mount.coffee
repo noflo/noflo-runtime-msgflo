@@ -183,39 +183,38 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
       instance.once 'ready', onReady
 
 getDefinition = (instance, options) ->
+  definition =
+    component: options.graph
+    icon: instance.getIcon()
+    label: instance.getDescription()
+    inports: []
+    outports: []
 
-    definition =
-      component: options.graph
-      icon: 'file-word-o' # FIXME: implement
-      label: 'No description' # FIXME: implement
-      inports: []
-      outports: []
+  # TODO: read out type annotations
+  for name in Object.keys instance.inPorts.ports
+    port =
+      id: name
+      type: 'all'
+    definition.inports.push port
 
-    # TODO: read out type annotations
-    for name in Object.keys instance.inPorts.ports
-      port =
-        id: name
-        type: 'all'
-      definition.inports.push port
+  for name in Object.keys instance.outPorts.ports
+    port =
+      id: name
+      type: 'all'
+    definition.outports.push port
 
-    for name in Object.keys instance.outPorts.ports
-      port =
-        id: name
-        type: 'all'
-      definition.outports.push port
+  # merge in port overrides from options
+  for id, port of options.inports
+    def = definition.inports.filter((p) -> p.id == id)[0]
+    for k, v of port
+      def[k] = v if v
+  for id, port of options.outports
+    def = definition.outports.filter((p) -> p.id == id)[0]
+    for k, v of port
+      def[k] = v if v
 
-    # merge in port overrides from options
-    for id, port of options.inports
-      def = definition.inports.filter((p) -> p.id == id)[0]
-      for k, v of port
-        def[k] = v if v
-    for id, port of options.outports
-      def = definition.outports.filter((p) -> p.id == id)[0]
-      for k, v of port
-        def[k] = v if v
-
-    def = msgflo.participant.instantiateDefinition definition, options.name
-    return def
+  def = msgflo.participant.instantiateDefinition definition, options.name
+  return def
 
 applyOption = (obj, option) ->
   tokens = option.split '='
