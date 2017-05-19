@@ -115,8 +115,9 @@ wrapPortsDedicated = (transactions, client, loader, instances, definition, optio
           wrapOutport transactions, client, instance, outPort.id, outPort.queue, (result) ->
             setTimeout ->
               debug 'wrapPortsDedicated network shutdown'
-              instance.shutdown()
-              instances.splice instances.indexOf(instance), 1
+              instance.shutdown (err) ->
+                throw err if err
+                instances.splice instances.indexOf(instance), 1
             , 1
 
         wrappedIn = wrapInport transactions, instance, port.id
@@ -174,53 +175,46 @@ loadAndStartGraph = (loader, graphName, iips, callback) ->
             # Need to not throw syncronously to avoid cascading affects
             throw err.error
           , 0
-        # Tell Network to start sending IIPs
-        instance.start()
-
-      # Components don't have a start callback, we can just go started immediately
-      # FIXME: Doing this on instance.network.start callback caused issues with Flowtrace
-      setTimeout ->
-        do onStarted
-      , 100
+      # Tell Network to start sending IIPs
+      instance.start onStarted
     if instance.isReady()
       onReady()
     else
       instance.once 'ready', onReady
 
 getDefinition = (instance, options) ->
+  definition =
+    component: options.graph
+    icon: instance.getIcon()
+    label: instance.getDescription()
+    inports: []
+    outports: []
 
-    definition =
-      component: options.graph
-      icon: 'file-word-o' # FIXME: implement
-      label: 'No description' # FIXME: implement
-      inports: []
-      outports: []
+  # TODO: read out type annotations
+  for name in Object.keys instance.inPorts.ports
+    port =
+      id: name
+      type: 'all'
+    definition.inports.push port
 
-    # TODO: read out type annotations
-    for name in Object.keys instance.inPorts.ports
-      port =
-        id: name
-        type: 'all'
-      definition.inports.push port
+  for name in Object.keys instance.outPorts.ports
+    port =
+      id: name
+      type: 'all'
+    definition.outports.push port
 
-    for name in Object.keys instance.outPorts.ports
-      port =
-        id: name
-        type: 'all'
-      definition.outports.push port
+  # merge in port overrides from options
+  for id, port of options.inports
+    def = definition.inports.filter((p) -> p.id == id)[0]
+    for k, v of port
+      def[k] = v if v
+  for id, port of options.outports
+    def = definition.outports.filter((p) -> p.id == id)[0]
+    for k, v of port
+      def[k] = v if v
 
-    # merge in port overrides from options
-    for id, port of options.inports
-      def = definition.inports.filter((p) -> p.id == id)[0]
-      for k, v of port
-        def[k] = v if v
-    for id, port of options.outports
-      def = definition.outports.filter((p) -> p.id == id)[0]
-      for k, v of port
-        def[k] = v if v
-
-    def = msgflo.participant.instantiateDefinition definition, options.name
-    return def
+  def = msgflo.participant.instantiateDefinition definition, options.name
+  return def
 
 applyOption = (obj, option) ->
   tokens = option.split '='
@@ -252,8 +246,11 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
   options.iips = '{}' if not options.iips
   options.dedicatedNetwork = false unless options.dedicatedNetwork
 
+  options.discoveryInterval = process.env['MSGFLO_DISCOVERY_PERIOD'] unless options.discoveryInterval
   options.broker = process.env['MSGFLO_BROKER'] if not options.broker
   options.broker = process.env['CLOUDAMQP_URL'] if not options.broker
+
+  options.discoveryInterval = 60 unless options.discoveryInterval
 
   options.iips = JSON.parse options.iips
 
@@ -276,6 +273,7 @@ class Mounter
     @instances = [] # noflo.Component instances
     @transactions = null # loaded with instance
     @coordinator = null
+    @discoveryInterval = null
 
   start: (callback) ->
     debug 'starting'
@@ -306,26 +304,33 @@ class Mounter
               debug 'setup in single network mode'
               wrapPortsOnExisting @transactions, @client, instance, definition
 
-            # Send discovery package to broker on 'fbp' queue
+            # Send discovery package, first once
             @sendParticipant definition, (err) =>
+              # then periodically
+              @discoveryInterval = setInterval () =>
+                @sendParticipant definition, (err) ->
+                  console.log 'WARNING: Failed to send Msgflo discovery', err if err
+              , @options.discoveryInterval*1000/2.2
               return callback err, @options
 
   stop: (callback) ->
     return callback null if not @instances.length
+    clearInterval @discoveryInterval
     debug "stopping #{@instances.length} instances"
-    while @instances.length
-      instance = @instances.shift()
-      instance.shutdown()
-    debug 'stopped component instances'
-    return callback null if not @coordinator
-    @coordinator.destroy (err) =>
-      debug 'coordinator connection destroyed', err
-      @coordinator = null
-      return callback null if not @client
-      @client.disconnect (err) =>
-        debug 'disconnected client', err
-        @client = null
-        return callback err
+    async.each @instances, (instance, done) ->
+      instance.shutdown done
+    , (err) =>
+      @instances = []
+      debug 'stopped component instances', err
+      return callback err if not @coordinator
+      @coordinator.destroy (err) =>
+        debug 'coordinator connection destroyed', err
+        @coordinator = null
+        return callback null if not @client
+        @client.disconnect (err) =>
+          debug 'disconnected client', err
+          @client = null
+          return callback err
 
   setupQueuesForComponent: (instance, definition, callback) ->
     setupQueues @client, definition, (err) =>

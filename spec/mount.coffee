@@ -227,6 +227,7 @@ transportTest = (originalOptions) ->
       m = new mount.Mounter options
       m.start done
     afterEach (done) ->
+      @timeout 4*1000
       m.stop done
 
     describe 'sending bang to Kick', ->

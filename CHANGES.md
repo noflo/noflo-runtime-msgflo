@@ -1,3 +1,24 @@
+# 0.11.3 - May 5, 2017
+
+* Discovery messages sent to MsgFlo now contain NoFlo component icon and description
+
+# 0.11.0 - March 15, 2017
+
+Breaking changes
+
+* Updated `noflo` to 0.8.x. This release breaks compatibility with 0.7.x.
+See the [release announcement](http://bergie.iki.fi/blog/noflo-0-8/).
+
+# 0.10.0 - March 15, 2017
+
+* MsgFlo discovery messages are now sent periodically, not just on startup
+* Updated `msgflo` to 0.10.x and `msgflo-nodejs` to 0.9.x
+
+# 0.9.0 - November 29, 2016
+
+* Updated `msgflo` to 0.9.x and `msgflo-nodejs` to 0.7.x
+* Updated `fbp` to 1.5.x, some new convenience syntax in .FBP files
+
 # 0.8.0 - June 13, 2016
 
 * Support `--dedicated-network` option, creates a new NoFlo.Network instance for each message.

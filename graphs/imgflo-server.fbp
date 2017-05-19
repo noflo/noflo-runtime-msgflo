@@ -1,4 +1,4 @@
 
-# !runtime msgflo
+# @runtime msgflo
 imgflo_api(imgflo-server/HttpApi) NEWJOB -> IN imgflo_jobs(msgflo/RoundRobin) OUT -> JOB imgflo_worker(imgflo-server/ProcessImage)
 worker JOBRESULT -> JOBRESULT api
