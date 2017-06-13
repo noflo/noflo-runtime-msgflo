@@ -18,6 +18,7 @@ parse = (args) ->
     .option('--trace [true]', 'Enable tracing with Flowtrace', Boolean, false)
     .option('--cache [true]', 'Enable NoFlo component cache', Boolean, false)
     .option('--dedicated-network [true]', 'Create a dedicated NoFlo network for each packet', Boolean, false)
+    .option('--auto-ack [true]', 'Whether to acknowledge received messages automatically', Boolean, false)
     .parse args
 
   delete program.options # not clone()able

@@ -12,7 +12,7 @@ trace = require('noflo-runtime-base').trace
 debug = require('debug')('noflo-runtime-msgflo:mount')
 debugError = require('debug')('noflo-runtime-msgflo:error')
 
-wrapInport = (transactions, instance, port) ->
+wrapInport = (transactions, instance, port, options) ->
   debug 'wrapInport', port, Object.keys instance.inPorts?.ports
 
   socket = noflo.internalSocket.createSocket()
@@ -31,9 +31,14 @@ wrapInport = (transactions, instance, port) ->
     socket.endGroup groupId
     socket.disconnect()
 
+    if options.autoAck
+      client.ackMessage msg
+      transactions.close groupId, port
+    return
+
   return onMessage
 
-wrapOutport = (transactions, client, instance, port, queueName, callback) ->
+wrapOutport = (transactions, client, instance, port, queueName, options, callback) ->
   debug 'wrapOutport', port, queueName
   socket = noflo.internalSocket.createSocket()
   instance.outPorts[port].attach socket
@@ -62,12 +67,12 @@ wrapOutport = (transactions, client, instance, port, queueName, callback) ->
       type: null
 
     if port is 'error'
-      client.nackMessage msg, false, false
+      client.nackMessage msg, false, false unless options.autoAck
       result.type = 'error'
     else
-      client.ackMessage msg
+      client.ackMessage msg unless options.autoAck
       result.type = 'ok'
-    transactions.close group, port
+    transactions.close group, port unless options.autoAck
     callback result
 
   socket.on 'disconnect', ->
@@ -86,18 +91,18 @@ wrapOutport = (transactions, client, instance, port, queueName, callback) ->
       debug 'sent output data', queueName, err, data
 
 # Execute all packets using the existing NoFlo network
-wrapPortsOnExisting = (transactions, client, instance, definition) ->
+wrapPortsOnExisting = (transactions, client, instance, definition, options) ->
   for port in definition.inports
     continue unless port.queue
     continue unless port.id
 
     # Normal mode is to reuse same network for each message
-    onMessage = wrapInport transactions, instance, port.id
+    onMessage = wrapInport transactions, instance, port.id, options
     client.subscribeToQueue port.queue, onMessage, (err) ->
       throw err if err
 
   for port in definition.outports
-    wrapOutport transactions, client, instance, port.id, port.queue, ->
+    wrapOutport transactions, client, instance, port.id, port.queue, options, ->
 
 # Execute each packet using a dedicated NoFlo network
 wrapPortsDedicated = (transactions, client, loader, instances, definition, options) ->
@@ -112,7 +117,7 @@ wrapPortsDedicated = (transactions, client, loader, instances, definition, optio
         instances.push instance
 
         for outPort in definition.outports
-          wrapOutport transactions, client, instance, outPort.id, outPort.queue, (result) ->
+          wrapOutport transactions, client, instance, outPort.id, outPort.queue, options, (result) ->
             setTimeout ->
               debug 'wrapPortsDedicated network shutdown'
               instance.shutdown (err) ->
@@ -120,7 +125,7 @@ wrapPortsDedicated = (transactions, client, loader, instances, definition, optio
                 instances.splice instances.indexOf(instance), 1
             , 1
 
-        wrappedIn = wrapInport transactions, instance, port.id
+        wrappedIn = wrapInport transactions, instance, port.id, options
         wrappedIn msg
 
     client.subscribeToQueue port.queue, onMessage, (err) ->
@@ -245,6 +250,7 @@ exports.normalizeOptions = normalizeOptions = (opt) ->
   options.prefetch = 1 if not options.prefetch
   options.iips = '{}' if not options.iips
   options.dedicatedNetwork = false unless options.dedicatedNetwork
+  options.autoAck = false unless options.autoAck
 
   options.discoveryInterval = process.env['MSGFLO_DISCOVERY_PERIOD'] unless options.discoveryInterval
   options.broker = process.env['MSGFLO_BROKER'] if not options.broker
@@ -302,7 +308,7 @@ class Mounter
               wrapPortsDedicated @transactions, @client, @loader, @instances, definition, @options
             else
               debug 'setup in single network mode'
-              wrapPortsOnExisting @transactions, @client, instance, definition
+              wrapPortsOnExisting @transactions, @client, instance, definition, @options
 
             # Send discovery package, first once
             @sendParticipant definition, (err) =>
