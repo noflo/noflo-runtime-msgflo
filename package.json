@@ -19,7 +19,7 @@
   ],
   "dependencies": {
     "amqplib": "^0.5.1",
-    "async": "~2.4.0",
+    "async": "~2.5.0",
     "coffee-script": "~1.12.1",
     "commander": "~2.9.0",
     "debug": "~2.6.0",
