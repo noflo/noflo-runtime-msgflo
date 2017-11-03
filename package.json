@@ -27,7 +27,7 @@
     "mqtt": "~2.7.1",
     "msgflo-nodejs": "~0.10.1",
     "newrelic": "^1.39.0",
-    "noflo": "~0.8.3",
+    "noflo": "~1.0.0",
     "noflo-runtime-base": "~0.8.2",
     "uuid": "~3.0.1"
   },
