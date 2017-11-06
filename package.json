@@ -20,7 +20,7 @@
   "dependencies": {
     "amqplib": "^0.5.1",
     "async": "~2.5.0",
-    "coffee-script": "~1.12.1",
+    "coffeescript": "^2.0.2",
     "commander": "~2.10.0",
     "debug": "~3.0.0",
     "fbp": "~1.6.0",
@@ -44,15 +44,6 @@
   },
   "main": "./runtime/network.js",
   "scripts": {
-    "test": "mocha --reporter spec --compilers coffee:coffee-script/register spec/*.coffee"
-  },
-  "noflo": {
-    "components": {
-      "TestDelayOrError": "components/TestDelayOrError.coffee"
-    },
-    "graphs": {
-      "RepeatTest": "graphs/repeat.fbp",
-      "IIPKickTest": "graphs/kickiip.fbp"
-    }
+    "test": "mocha --reporter spec --require coffeescript/register spec/*.coffee"
   }
 }

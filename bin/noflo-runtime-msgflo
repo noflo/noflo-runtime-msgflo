@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 // vim: set filetype=javascript:
 
-require('coffee-script/register');
+require('coffeescript/register');
 require('../src').main.main();
-
-
