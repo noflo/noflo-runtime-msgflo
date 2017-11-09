@@ -44,6 +44,6 @@
   },
   "main": "./runtime/network.js",
   "scripts": {
-    "test": "mocha --reporter spec --require coffeescript/register spec/*.coffee"
+    "test": "mocha --exit --reporter spec --require coffeescript/register spec/*.coffee"
   }
 }
