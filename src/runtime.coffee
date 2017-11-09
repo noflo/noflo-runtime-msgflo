@@ -47,8 +47,10 @@ class SendReceivePair
 # The coordinator accepts messages from many participants, and
 # can then talk FBP runtime protocol over WebSocket to a typical FBP runtime client like Flowhub
 class MsgFloRuntime extends Base
-  constructor: (@client, options) ->
-    @options = if options then options else {}
+  constructor: (client, options = {}) ->
+    super options
+    @client = client
+    @options = options
 
     # TODO: support capture-stdout and capture-exceptions like noflo-nodejs? or maybe it should move to -base...
     # FIXME: generate the send/receive names
