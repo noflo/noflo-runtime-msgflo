@@ -20,7 +20,7 @@
   "dependencies": {
     "amqplib": "^0.5.1",
     "async": "^2.5.0",
-    "coffeescript": "^2.0.2",
+    "coffeescript": "2.3.0",
     "commander": "^2.10.0",
     "debug": "^3.0.0",
     "fbp": "^1.6.0",
