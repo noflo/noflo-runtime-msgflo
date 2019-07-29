@@ -18,7 +18,7 @@
     "amqp"
   ],
   "dependencies": {
-    "amqplib": "^0.5.1",
+    "amqplib": "^0.5.4",
     "async": "^2.5.0",
     "coffeescript": "^2.0.2",
     "commander": "^2.10.0",
