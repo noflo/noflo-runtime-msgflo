@@ -33,7 +33,7 @@
   },
   "devDependencies": {
     "chai": "^4.0.0",
-    "mocha": "^6.0.0",
+    "mocha": "^7.1.0",
     "noflo-core": ">= 0.4.0",
     "noflo-objects": ">= 0.3.0",
     "msgflo": "^0.12.0",
